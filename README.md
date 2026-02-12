@@ -23,7 +23,7 @@ The project consists of the following key components:
 * **Amazon EKS (Kubernetes):** The control plane that runs the application containers. It handles auto-scaling (adding more containers when traffic is high) and self-healing (restarting crashed containers).
 * **EC2 Worker Nodes:** The actual virtual servers where the application runs. These reside in the private subnet and are managed automatically.
 * **Java App (Booking Service):** A Spring Boot application that handles seat reservations and starts the booking process.
-* **Node.js App (Worker Service):** A Node.js application that processes payments and generates PDF tickets.
+* **Node.js App (Worker Service):** A Node.js application that processes payments and generates ticket IDs.
 
 ### Data & Messaging
 * **Amazon RDS (PostgreSQL):** A managed database used to store booking data and flight inventory.
@@ -36,7 +36,7 @@ The project consists of the following key components:
 The services communicate using specific protocols chosen for efficiency and reliability:
 
 1.  **gRPC:** Used to connect the application pods to **Camunda SaaS**. This allows for high-performance streaming of tasks.
-2.  **AMQP:** Used to send messages to **Amazon MQ**. This is "fire and forget"—the sender doesn't need to wait for a response.
+2.  **AMQP:** Used to send messages to **Amazon MQ**. This is "fire and forget." i.e. the sender doesn't need to wait for a response.
 3.  **REST (HTTP/HTTPS):** Used for user traffic. The **Application Load Balancer (ALB)** receives internet requests and routes them directly to the active pods running on the EC2 nodes.
 
 ## 5. Network & Security
