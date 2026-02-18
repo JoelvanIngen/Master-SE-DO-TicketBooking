@@ -13,11 +13,11 @@ env:
 
   AWS_REGION: us-east-1                  # set this to your preferred AWS region, e.g. us-west-1
   ECR_REPOSITORY: test_repo_for_ci_cd           # set this to your Amazon ECR repository name
-  ECS_SERVICE: deploy_test-service-i2vnfjcz                 # set this to your Amazon ECS service name
+  ECS_SERVICE: booking-service-java-service-73i2y0uv                # set this to your Amazon ECS service name
   ECS_CLUSTER: frugal-hamster-i5wlfx                 # set this to your Amazon ECS cluster name
   ECS_TASK_DEFINITION: .aws/deploy_test-revision1.json # set this to the path to your Amazon ECS task definition
                                                # file, e.g. .aws/task-definition.json
-  CONTAINER_NAME: ci-cd_test           # set this to the name of the container in the
+  CONTAINER_NAME: booking-service_container           # set this to the name of the container in the
                                                # containerDefinitions section of your task definition
 
 jobs:
@@ -61,6 +61,7 @@ jobs:
           # Build a docker container and
           # push it to ECR so that it can
           # be deployed to ECS.
+          cd booking-service-java
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
