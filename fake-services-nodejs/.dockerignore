@@ -1,0 +1,4 @@
+node_modules
+dist
+npm-debug.log
+#.env  # <- should be added back but I just want to get something to work right now
