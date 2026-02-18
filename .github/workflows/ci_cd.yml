@@ -8,21 +8,17 @@ on:
 
 env:
   IMAGE_NAME: student_service
+  VALIDATE_JAVA: true
+  DEFAULT_BRANCH: main
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   # JOB 1: Test the code
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Lint with Ruff
-        run: |
-          ruff check booking-service-java/ fake-services-nodejs/
-    - name: Fix with Ruff
-        run: |
-          ruff check booking-service-java/ fake-services-nodejs/ --fix
-    - name: Check Formatting with Black
-        run: |
-          black --check booking-service-java/ fake-services-nodejs/
-    - name: Fix Formatting with Black
-        run: |
-          black booking-service-java/ fake-services-nodejs/
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Super-Linter
+        uses: github/super-linter@v5
