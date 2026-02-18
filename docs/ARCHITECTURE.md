@@ -10,7 +10,7 @@ When combined with AWS Auto Scaling, changes in demand automatically scale resou
 ### AWS Elastic Container Registry
 AWS ECS integrates with many AWS services and aims to reduce infrastructure management [*source*](https://aws.amazon.com/ecs/).
 Combined with AWS Fargate, it should be possible to easily spin up serverless instances of necessary Docker containers.
-We should be able to write a Github Actions script that automatically pushes the Github repository to AWS ECS, but since we're not going to develop the codebase itself, that might be a bit pointless.
+We should be able to write a GitHub Actions script that automatically pushes the Github repository to AWS ECS, but since we're not going to develop the codebase itself, that might be a bit pointless.
 
 ### Why not Kubernetes?
 While AWS Elastic Kubernetes Service (EKS) exists, it is much more pricey than Fargate + ECS, and the added configurability provided are mostly advanced settings that will not be used during this project.
