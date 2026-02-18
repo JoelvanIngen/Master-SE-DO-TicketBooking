@@ -8,7 +8,7 @@ The goal of this project is to demonstrate a production-ready setup using **AWS 
 ## 2. System Architecture
 The system is deployed inside a Virtual Private Cloud (VPC) on AWS to ensure security.
 
-![Architecture Diagram](./diagram.png)
+![Architecture Diagram](./diagram(2).png)
 
 ### Key Architectural Decisions
 * **Containerization:** The application is packaged in Docker containers so it runs the same way on a developer's laptop as it does in the cloud.
