@@ -7,7 +7,6 @@ on:
     branches: [ "main", "ci_cd" ]
 
 env:
-  IMAGE_NAME: student_service
   VALIDATE_JAVA: true
   DEFAULT_BRANCH: main
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
