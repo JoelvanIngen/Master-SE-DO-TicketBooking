@@ -1,0 +1,28 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "ci_cd" ]
+  pull_request:
+    branches: [ "main", "ci_cd" ]
+
+env:
+  IMAGE_NAME: student_service
+
+jobs:
+  # JOB 1: Test the code
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Lint with Ruff
+        run: |
+          ruff check booking-service-java/ fake-services-nodejs/
+    - name: Fix with Ruff
+        run: |
+          ruff check booking-service-java/ fake-services-nodejs/ --fix
+    - name: Check Formatting with Black
+        run: |
+          black --check booking-service-java/ fake-services-nodejs/
+    - name: Fix Formatting with Black
+        run: |
+          black booking-service-java/ fake-services-nodejs/
