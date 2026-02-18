@@ -1,7 +1,7 @@
 # Cloud-Native Ticket Booking System
 
 ## 1. Project Overview
-This project is a ticket booking application designed to run on the cloud. It uses a **Modular Monolithic** architecture separating the Java and Camunda logic from the Node.js fake services logic.
+This project is a ticket booking application designed to run on the cloud. It uses a **Microservice** architecture separating the Java and Camunda logic from the Node.js fake services logic.
 
 The goal of this project is to demonstrate a production-ready setup using **AWS services**. It ensures the application is scalable, reliable, and cost-aware.
 
