@@ -25,7 +25,7 @@ env:
                                                # containerDefinitions section of your task definition
 
 jobs:
-  # JOB 1: Test the code
+  # JOB 1: Test the code 
   test:
     runs-on: ubuntu-latest
     steps:
