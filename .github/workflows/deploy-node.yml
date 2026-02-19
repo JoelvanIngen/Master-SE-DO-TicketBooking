@@ -2,23 +2,23 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "ci_cd" ]
+    branches: [ "main"]
     paths:
       - 'fake-services-nodejs/**'   # only run if the fakeservices changed
       - '.github/workflows/deploy-node.yml' # Also run if this config changes
       - 'Dockerfile' 
   pull_request:
-    branches: [ "main", "ci_cd" ]
+    branches: [ "main" ]
 
 env:
   VALIDATE_JAVA: true
   DEFAULT_BRANCH: main
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  AWS_REGION: us-east-1                  # set this to your preferred AWS region, e.g. us-west-1
+  AWS_REGION: eu-north-1                  # set this to your preferred AWS region, e.g. us-west-1
   ECR_REPOSITORY: fake-services-nodejs-repo           # set this to your Amazon ECR repository name
-  ECS_SERVICE: fake-services-nodejs-task-def-service-hotzxrxt                # set this to your Amazon ECS service name
-  ECS_CLUSTER: dev_ops_cluster-fcca                 # set this to your Amazon ECS cluster name
+  ECS_SERVICE: fake-services-nodejs-task-def-service-ndhfhlu6                # set this to your Amazon ECS service name
+  ECS_CLUSTER: DevOpsCluster                 # set this to your Amazon ECS cluster name
   ECS_TASK_DEFINITION: .aws/deploy_fake_services.json # set this to the path to your Amazon ECS task definition
                                                # file, e.g. .aws/task-definition.json
   CONTAINER_NAME: fake-services-nodejs           # set this to the name of the container in the
@@ -45,7 +45,6 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
