@@ -9,18 +9,19 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 
-FROM amazoncorretto:25-alpine-jdk AS runner
+FROM public.ecr.aws/lambda/java:25
 
-WORKDIR /app
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-RUN addgroup -g 1001 -S app && \
-    adduser -S app -u 1001 -G app && \
-    chown -R app:app /app
+# Compiled class files
+COPY --from=builder /app/target/classes ${LAMBDA_TASK_ROOT}
 
-USER app
+# Dependency jars
+COPY --from=builder /app/target/lib/*.jar ${LAMBDA_TASK_ROOT}/lib/
 
-COPY --from=builder --chown=app:app /app/target/ticket-booking-*.jar app.jar
+# JVM optimizations for Lambda cold starts
+ENV JAVA_TOOL_OPTIONS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
-EXPOSE 8080
-
-CMD ["java", "-jar", "app.jar"]
+# The CMD can be overridden for each Lambda function.
+# We provide a default here
+CMD ["io.berndruecker.ticketbooking.handlers.GenerateTicketHandler::handleRequest"]
