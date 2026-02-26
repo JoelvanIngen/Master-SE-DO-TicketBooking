@@ -24,7 +24,7 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
     // URL for ticketId generation service
-    public static String ENDPOINT = System.getenv("TICKETGEN_REQUEST_QUEUE_URL");
+    public static String ENDPOINT = System.getenv("TICKETGEN_REQUEST_URL");
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
