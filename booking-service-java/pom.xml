@@ -10,7 +10,7 @@
 	<name>ticket-booking</name>
 
 	<properties>
-		<maven.compiler.release>25</maven.compiler.release>
+		<maven.compiler.release>21</maven.compiler.release>
 		<aws.sdk.version>2.41.31</aws.sdk.version>
 		<jackson.version>2.21.0</jackson.version>
 	</properties>
