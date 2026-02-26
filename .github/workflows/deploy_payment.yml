@@ -1,4 +1,4 @@
-name: Deploy reserveSeats to AWS Lambda
+name: Deploy payment to AWS Lambda
 
 on:
   push:
