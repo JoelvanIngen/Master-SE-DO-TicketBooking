@@ -56,5 +56,5 @@ jobs:
       - name: Deploy to AWS Lambda
         run: |
           aws lambda update-function-code \
-            --function-name reserveSeats \ 
-            --zip-file fileb://deploy.zip 
+            --function-name reserveSeats \
+            --zip-file fileb://deploy.zip
