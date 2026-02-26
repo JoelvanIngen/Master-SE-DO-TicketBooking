@@ -2,7 +2,7 @@ name: Build & Deploy to AWS Lambda
 
 on:
   push:
-    branches: [main]
+    branches: ["main", "ci_cd"]
     paths:
       - 'booking-service-java/src/main/java/io/berndrecker/ticketbooking/**'
       - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
