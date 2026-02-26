@@ -41,7 +41,7 @@ jobs:
           mkdir -p dist
           
           # Bundle your specific file
-          npx esbuild src/reserveSeats.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:@aws-sdk/*
+          npx esbuild src/reserveSeats.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
           
           # Zip only the bundled file
           cd dist
