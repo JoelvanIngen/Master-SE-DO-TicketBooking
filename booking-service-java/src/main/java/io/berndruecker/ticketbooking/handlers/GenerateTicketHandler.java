@@ -23,9 +23,8 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
-    // This should be of course injected and depends on the environment.
-    // Hard coded for simplicity here
-    public static String ENDPOINT = "http://fake-services:3000/ticket";
+    // URL for ticketId generation service
+    public static String ENDPOINT = System.getenv("TICKETGEN_REQUEST_QUEUE_URL");
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
