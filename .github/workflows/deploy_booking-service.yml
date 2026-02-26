@@ -8,7 +8,7 @@ on:
       - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
   AWS_REGION: eu-north-1 
 
 jobs:
