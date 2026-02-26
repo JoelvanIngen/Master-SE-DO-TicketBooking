@@ -29,12 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build TypeScript
-        run: npm run build # This usually runs 'tsc'
-
-      - name: Generate Deployment Zip
-        # We only zip the compiled JS and production node_modules
-        run: zip -r deploy.zip dist/ node_modules/
+      - name: Build and Package Functions
+        run: |
+          # Navigate to the subfolder where your code lives
+          cd Master-SE-DO-TicketBooking/fake-services-nodejs
+          
+          # Install dependencies in that specific folder
+          npm install
+          
+          # Create a dist folder
+          mkdir -p dist
+          
+          # Bundle your specific file
+          npx esbuild src/reserveSeats.ts --bundle --platform=node --target=node20 --outfile=dist/reserveSeats.js
+          
+          # Zip only the bundled file
+          cd dist
+          zip reserveSeats.zip reserveSeats.js
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
