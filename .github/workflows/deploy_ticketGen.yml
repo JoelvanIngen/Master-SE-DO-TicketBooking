@@ -1,11 +1,11 @@
-name: Deploy reserveSeats to AWS Lambda
+name: Deploy ticketGen to AWS Lambda
 
 on:
   push:
     branches: [ "main", "ci_cd" ]
     paths:
-      - 'fake-services-nodejs/src/reserveSeats.ts'   # only run if the booking service changed
-      - '.github/workflows/deploy_reserveSeats.yml' # Also run if this config changes
+      - 'fake-services-nodejs/src/ticketGen.ts'   # only run if the booking service changed
+      - '.github/workflows/deploy_ticketGen.yml' # Also run if this config changes
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,11 +41,11 @@ jobs:
           mkdir -p dist
           
           # Bundle your specific file
-          npx esbuild src/reserveSeats.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
+          npx esbuild src/ticketGen.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
           
           # Zip only the bundled file
           cd dist
-          zip reserveSeats.zip index.js
+          zip ticketGen.zip index.js
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,5 +56,5 @@ jobs:
       - name: Deploy to AWS Lambda
         run: |
           aws lambda update-function-code \
-            --function-name reserveSeats \
-            --zip-file fileb://fake-services-nodejs/dist/reserveSeats.zip
+            --function-name ticketGen \
+            --zip-file fileb://fake-services-nodejs/dist/ticketGen.zip
