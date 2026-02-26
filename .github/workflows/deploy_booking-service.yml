@@ -43,16 +43,16 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name retrievePayment \
-            --zip-file fileb://booking-service-java/target/ticket-booking-0.0.1-SNAPSHOT-shaded.jar
+            --zip-file fileb://booking-service-java/target/booking-service-lambda.jar
       
       - name: 🚀 Deploy to AWS Lambda using CLI (PaymentResponse)
         run: |
           aws lambda update-function-code \
             --function-name PaymentResponseHandler \
-            --zip-file fileb://booking-service-java/target/ticket-booking-0.0.1-SNAPSHOT-shaded.jar
+            --zip-file fileb://booking-service-java/target/booking-service-lambda.jar
       
       - name: 🚀 Deploy to AWS Lambda using CLI (GenTicket)
         run: |
           aws lambda update-function-code \
             --function-name GenerateTicketHandler \
-            --zip-file fileb://booking-service-java/target/ticket-booking-0.0.1-SNAPSHOT-shaded.jar
+            --zip-file fileb://booking-service-java/target/booking-service-lambda.jar
