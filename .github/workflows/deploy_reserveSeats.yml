@@ -45,7 +45,7 @@ jobs:
           
           # Zip only the bundled file
           cd dist
-          zip reserveSeats.zip reserveSeats.js
+          zip reserveSeats.zip index.js
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
