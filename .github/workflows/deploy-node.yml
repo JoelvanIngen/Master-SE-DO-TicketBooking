@@ -1,38 +1,31 @@
-name: Deploy Booking Service (Java)
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main"]
     paths:
-      - 'booking-service-java/**'   # only run if the booking service changed
-      - '.github/workflows/deploy-java.yml' # Also run if this config changes
+      - 'fake-services-nodejs/**'   # only run if the fakeservices changed
+      - '.github/workflows/deploy-node.yml' # Also run if this config changes
       - 'Dockerfile' 
   pull_request:
-    branches: [ "main"]
+    branches: [ "main" ]
 
 env:
   VALIDATE_JAVA: true
   DEFAULT_BRANCH: main
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
 
-<<<<<<< HEAD:.github/workflows/deploy_booking-service.yml
   AWS_REGION: eu-north-1                  # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: booking-service-repo           # set this to your Amazon ECR repository name
-  ECS_SERVICE: booking-service-java-service-73i2y0uv                # set this to your Amazon ECS service name
-  ECS_CLUSTER: frugal-hamster-i5wlfx                 # set this to your Amazon ECS cluster name
-=======
-  AWS_REGION: eu-north-1                # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: booking-service-repo           # set this to your Amazon ECR repository name
-  ECS_SERVICE: booking-service-java-task-def-service-1x9x8rlc                  # set this to your Amazon ECS service name
+  ECR_REPOSITORY: fake-services-nodejs-repo           # set this to your Amazon ECR repository name
+  ECS_SERVICE: fake-services-nodejs-task-def-service-ndhfhlu6                # set this to your Amazon ECS service name
   ECS_CLUSTER: DevOpsCluster                 # set this to your Amazon ECS cluster name
->>>>>>> main:.github/workflows/deploy-java.yml
-  ECS_TASK_DEFINITION: .aws/deploy_booking_service.json # set this to the path to your Amazon ECS task definition
+  ECS_TASK_DEFINITION: .aws/deploy_fake_services.json # set this to the path to your Amazon ECS task definition
                                                # file, e.g. .aws/task-definition.json
-  CONTAINER_NAME: booking-service_container           # set this to the name of the container in the
+  CONTAINER_NAME: fake-services-nodejs           # set this to the name of the container in the
                                                # containerDefinitions section of your task definition
 
 jobs:
-  # JOB 1: Test the code 
+  # JOB 1: Test the code
   test:
     runs-on: ubuntu-latest
     steps:
@@ -63,11 +56,27 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-        run: | 
+        run: |
           # Build a docker container and
           # push it to ECR so that it can
-          # be deployed to lambda.
-          cd booking-service-java
+          # be deployed to ECS.
+          cd fake-services-nodejs
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@c804dfbdd57f713b6c079302a4c01db7017a36fc
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@df9643053eda01f169e64a0e60233aacca83799a
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true

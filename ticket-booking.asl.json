@@ -1,0 +1,86 @@
+{
+  "Comment": "Ticket Booking Workflow - Migrated from Camunda/Zeebe",
+  "StartAt": "Reserve Seats",
+  "States": {
+    "Reserve Seats": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account:function:reserve-seats",
+      "Comment": "Including retries if gRPC/Service is not available",
+      "Parameters": {
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "simulateBookingFailure.$": "$.simulateBookingFailure"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "ErrorSeatsNotAvailable"
+          ],
+          "Next": "Booking Cancelled (Seats Not Available)"
+        }
+      ],
+      "Next": "Retrieve Payment"
+    },
+    "Retrieve Payment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:region:account:function:retrieve-payment",
+        "Payload": {
+          "bookingReferenceId.$": "$.bookingReferenceId",
+          "taskToken.$": "$$.Task.Token"
+        }
+      },
+      "TimeoutSeconds": 30,
+      "ResultSelector": {
+        "paymentConfirmationId.$": "$.paymentConfirmationId"
+      },
+      "ResultPath": "$.paymentInfo",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.Timeout"
+          ],
+          "Next": "Booking Cancelled (Timeout)"
+        }
+      ],
+      "Next": "Generate Ticket"
+    },
+    "Generate Ticket": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account:function:generate-ticket",
+      "Comment": "Including retries if REST API is not available",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Parameters": {
+        "simulateBookingFailure.$": "$.simulateBookingFailure"
+      },
+      "ResultSelector": {
+        "ticketId.$": "$.ticketId"
+      },
+      "ResultPath": "$.ticketInfo",
+      "Next": "Booking Succeeded"
+    },
+    "Booking Succeeded": {
+      "Type": "Succeed",
+      "Comment": "Returns reservationId, paymentConfirmationId, and ticketId"
+    },
+    "Booking Cancelled (Seats Not Available)": {
+      "Type": "Fail",
+      "Error": "ErrorSeatsNotAvailable",
+      "Cause": "Seats not available for this booking reference"
+    },
+    "Booking Cancelled (Timeout)": {
+      "Type": "Fail",
+      "Error": "PaymentTimeout",
+      "Cause": "Payment not received within 30 seconds"
+    }
+  }
+}
