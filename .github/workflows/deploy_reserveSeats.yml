@@ -32,7 +32,7 @@ jobs:
       - name: Build and Package Functions
         run: |
           # Navigate to the subfolder where your code lives
-          cd Master-SE-DO-TicketBooking/fake-services-nodejs
+          cd fake-services-nodejs
           
           # Install dependencies in that specific folder
           npm install
