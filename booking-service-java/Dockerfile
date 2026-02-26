@@ -16,9 +16,6 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 # Compiled class files
 COPY --from=builder /app/target/classes ${LAMBDA_TASK_ROOT}
 
-# Dependency jars
-COPY --from=builder /app/target/lib/*.jar ${LAMBDA_TASK_ROOT}/lib/
-
 # JVM optimizations for Lambda cold starts
 ENV JAVA_TOOL_OPTIONS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
