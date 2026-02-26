@@ -4,15 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 const sqsClient = new SQSClient({});
 const QUEUE_URL = process.env.PAYMENT_RESPONSE_QUEUE_URL;
 
-<<<<<<< HEAD
-export const handler = async (event: any) => {
-  for (const record of event.Records) {
-    const paymentConfirmationId = uuidv4();
-    // Logic here...
-    await sqsClient.send(new SendMessageCommand({
-      QueueUrl: QUEUE_URL,
-      MessageBody: JSON.stringify({ paymentConfirmationId })
-=======
 /**
  * - Receives: taskToken, paymentRequestId as sent by RetrievePaymentHandler.java
  * - Generates: paymentConfirmationId
@@ -37,7 +28,6 @@ export const handler = async (event: any) => {
     await sqsClient.send(new SendMessageCommand({
       QueueUrl: QUEUE_URL,
       MessageBody: JSON.stringify(outgoingPayload)
->>>>>>> main
     }));
   }
 };
