@@ -1,73 +1,56 @@
-name: Deploy Booking Service (Java)
+name: Build & Deploy to AWS Lambda
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
     paths:
-      - 'booking-service-java/**'   # only run if the booking service changed
-      - '.github/workflows/deploy-java.yml' # Also run if this config changes
-      - 'Dockerfile' 
-  pull_request:
-    branches: [ "main"]
+      - 'booking-service-java/src/main/java/io/berndrecker/ticketbooking/**'
+      - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
 
 env:
-  VALIDATE_JAVA: true
-  DEFAULT_BRANCH: main
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-<<<<<<< HEAD:.github/workflows/deploy_booking-service.yml
-  AWS_REGION: eu-north-1                  # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: booking-service-repo           # set this to your Amazon ECR repository name
-  ECS_SERVICE: booking-service-java-service-73i2y0uv                # set this to your Amazon ECS service name
-  ECS_CLUSTER: frugal-hamster-i5wlfx                 # set this to your Amazon ECS cluster name
-=======
-  AWS_REGION: eu-north-1                # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: booking-service-repo           # set this to your Amazon ECR repository name
-  ECS_SERVICE: booking-service-java-task-def-service-1x9x8rlc                  # set this to your Amazon ECS service name
-  ECS_CLUSTER: DevOpsCluster                 # set this to your Amazon ECS cluster name
->>>>>>> main:.github/workflows/deploy-java.yml
-  ECS_TASK_DEFINITION: .aws/deploy_booking_service.json # set this to the path to your Amazon ECS task definition
-                                               # file, e.g. .aws/task-definition.json
-  CONTAINER_NAME: booking-service_container           # set this to the name of the container in the
-                                               # containerDefinitions section of your task definition
+  AWS_REGION: eu-north-1 
 
 jobs:
-  # JOB 1: Test the code 
-  test:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-   #  environment: production
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: 📦 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 🔧 Build project with Maven
+      # Navigate to the subfolder where your code lives
+        run: |
+          cd booking-service-java
+          mvn clean package -DskipTests
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}  # The role-to-assume should be the ARN of the IAM role you created for GitHub Actions OIDC
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@62f4f872db3836360b72999f4b87f1ff13310f3a
-
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: | 
-          # Build a docker container and
-          # push it to ECR so that it can
-          # be deployed to lambda.
-          cd booking-service-java
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: 🚀 Deploy to AWS Lambda using CLI (RetrievePayment)
+        run: |
+          aws lambda update-function-code \
+            --function-name retrievePayment \
+            --zip-file fileb://target/booking-service-lambda.jar
+      
+      - name: 🚀 Deploy to AWS Lambda using CLI (PaymentResponse)
+        run: |
+          aws lambda update-function-code \
+            --function-name PaymentResponseHandler \
+            --zip-file fileb://target/booking-service-lambda.jar
+      
+      - name: 🚀 Deploy to AWS Lambda using CLI (GenTicket)
+        run: |
+          aws lambda update-function-code \
+            --function-name GenerateTicketHandler \
+            --zip-file fileb://target/booking-service-lambda.jar

@@ -87,7 +87,7 @@
 	</dependencies>
 
 	<build>
-		<plugins>
+		<finalName>booking-service-lambda</finalName> <plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -104,7 +104,6 @@
 					</execution>
 				</executions>
 			</plugin>
-<<<<<<< HEAD
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
@@ -136,8 +135,6 @@
 					</execution>
 				</executions>
 			</plugin>
-=======
->>>>>>> main
 		</plugins>
 	</build>
 </project>
