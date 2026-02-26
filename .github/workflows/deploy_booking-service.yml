@@ -4,11 +4,11 @@ on:
   push:
     branches: ["main", "ci_cd"]
     paths:
-      - 'booking-service-java/src/main/java/io/berndrecker/ticketbooking/**'
+      - 'booking-service-java/src/*'
       - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
   AWS_REGION: eu-north-1 
 
 jobs:
