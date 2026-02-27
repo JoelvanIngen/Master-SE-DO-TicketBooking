@@ -7,7 +7,7 @@ on:
     branches:
       - "main"
   workflow_dispatch:
-
+  
 # Stop old pipeline if new one starts
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
