@@ -10,7 +10,7 @@ It ensures the application is scalable, reliable, and cost-aware.
 ## System Architecture
 The system is deployed inside a Virtual Private Cloud (VPC) on AWS to ensure security.
 
-![Architecture Diagram](./diagram(2).png)
+![Architecture Diagram](./aws_architecture.png)
 
 ### Short Architecture Overview
 The application is run using AWS Step Functions, which coordinates Lambda Functions that communicate via SQS and Lambda Invocations.
