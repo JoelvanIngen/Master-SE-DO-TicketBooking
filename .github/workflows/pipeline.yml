@@ -7,7 +7,7 @@ on:
     branches:
       - "main"
   workflow_dispatch:
-  
+
 # Stop old pipeline if new one starts
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -63,8 +63,8 @@ jobs:
     # Dependabot not allowed to break production
     if: github.actor != 'dependabot[bot]'
     permissions:
-      id-token: read
-      contents: write
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout Code
