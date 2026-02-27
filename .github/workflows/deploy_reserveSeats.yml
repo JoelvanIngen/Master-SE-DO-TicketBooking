@@ -1,6 +1,7 @@
 name: Deploy reserveSeats to AWS Lambda
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main", "ci_cd" ]
     paths:

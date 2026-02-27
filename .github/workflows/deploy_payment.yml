@@ -1,6 +1,7 @@
 name: Deploy payment to AWS Lambda
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main", "ci_cd" ]
     paths:
