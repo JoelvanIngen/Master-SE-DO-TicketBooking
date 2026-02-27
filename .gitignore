@@ -31,3 +31,6 @@ node_modules
 cdk.out/
 .sfn/
 *.stack.reports.json
+
+# Venv for local CDK
+.venv/
