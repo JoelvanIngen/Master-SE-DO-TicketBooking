@@ -1,0 +1,101 @@
+name: pipeline.yml
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+# Stop old pipeline if new one starts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-java:
+    uses: './.github/workflows/java-build-test.yml'
+
+  build-node:
+    strategy:
+      matrix:
+        include:
+          - dir: 'public-endpoint-nodejs'
+            name: 'public-endpoint-node-assets'
+          - dir: 'fake-services-nodejs'
+            name: 'fake-services-node-assets'
+    uses: './.github/workflows/node-build-test.yml'
+    with:
+      working_directory: ${{ matrix.dir }}
+      artifact_name: ${{ matrix.name }}
+
+  test-infra:
+    name: Test Infrastructure
+    needs: [build-java]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Download Java Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: booking-service-jar
+          path: booking-service-java/target/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: CDK Synth
+        run: npx cdk synth
+
+  deploy:
+    name: Deploy to AWS
+    needs: [ build-java, build-node, test-infra ]
+    runs-on: ubuntu-latest
+
+    # Dependabot not allowed to break production
+    if: github.actor != 'dependabot[bot]'
+    permissions:
+      id-token: read
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Download Java Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: booking-service-jar
+          path: booking-service-java/target/
+
+      - name: Download Public Endpoint Assets
+        uses: actions/download-artifact@v8
+        with:
+          name: public-endpoint-node-assets
+          path: public-endpoint-nodejs/
+
+      - name: Download Fake Services Assets
+        uses: actions/download-artifact@v8
+        with:
+          name: fake-services-node-assets
+          path: fake-services-nodejs/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # ARN of the IAM role created for GitHub Actions OIDC
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-north-1
+
+      - name: CDK Deploy
+        run: |
+          npm ci
+          npx cdk deploy --require-approval never
