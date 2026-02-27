@@ -28,6 +28,9 @@ env:
 
 jobs:
   call-deploy:
+    permissions:
+      id-token: write
+      contents: read
     uses: './.github/workflows/deploy_node-generic.yml'
     with:
       aws_region: eu-north-1
