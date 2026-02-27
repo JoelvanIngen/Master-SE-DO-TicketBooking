@@ -1,4 +1,4 @@
-name: Deploy ticketGen to AWS Lambda
+name: Deploy public endpoint to AWS Lambda
 
 on:
   push:
