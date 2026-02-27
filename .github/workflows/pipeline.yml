@@ -95,12 +95,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: eu-north-1
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Bootstrap CDK
-        run: npx cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/eu-north-1
-
       - name: CDK Deploy
         run: |
           npm ci
