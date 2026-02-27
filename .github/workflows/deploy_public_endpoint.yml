@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "ci_cd" ]
     paths:
-      - 'public-endpoint-nodejs/src/deploy_ticketGen.yml'   # only run if the booking service changed
+      - 'public-endpoint-nodejs/src/**' 
       - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
 
 env:
