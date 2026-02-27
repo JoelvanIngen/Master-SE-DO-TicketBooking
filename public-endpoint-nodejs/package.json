@@ -1,0 +1,19 @@
+{
+  "name": "public-endpoint-nodejs",
+  "version": "1.0.0",
+  "description": "Public API Gateway wrapper",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
+    "package": "npm run build && cd dist && zip function.zip index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sfn": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.0.0"
+  }
+}
