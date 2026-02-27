@@ -33,13 +33,11 @@ jobs:
         with:
           java-version: '25'
           distribution: 'temurin'
+          cache: 'maven'
 
       - name: 🔧 Build project with Maven
         working-directory: ./booking-service-java
-      # Navigate to the subfolder where your code lives
-        run: |
-          mvn dependency:go-offline
-          mvn clean package -DskipTests
+        run: mvn clean package -DskipTests
 
       - name: Configure AWS credentials
         if: github.actor != 'dependabot[bot]'
