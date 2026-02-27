@@ -35,9 +35,9 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
         try {
             if ("ticket".equalsIgnoreCase((String) input.get(ProcessConstants.VAR_SIMULATE_BOOKING_FAILURE))) {
 
-                // Simulate a network problem to the HTTP server
+                // Simulate a network problem to the ticket generation service
                 // AWS prefers RuntimeExceptions, so reshape
-                throw new RuntimeException(new IOException("[Simulated] Could not connect to HTTP server"));
+                throw new RuntimeException(new IOException("[Simulated] Could not connect to ticket generation server"));
 
             } else {
 
