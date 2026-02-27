@@ -30,9 +30,6 @@ Security groups are applied to control traffic flow between the Lambda Functions
 Amazon RDS is used as database to keep persistent booking data.
 AWS Secrets Manager is used to inject environment variables that should not be publicised in public locations.
 
-### Container management
-AWS ECS automatically receives containers from the GitHub workflow, and instances are pulled from ECS by other services within the workflow.
-
 
 ## Architectural decisions
 This section explains architectural decisions made, with reasoning to reinforce our current approach.
