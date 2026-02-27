@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.993.0",
+    "@aws-sdk/client-sqs": "^3.999.0",
     "dotenv": "^8.6.0",
     "express": "^4.17.1",
     "uuid": "^8.3.2"
