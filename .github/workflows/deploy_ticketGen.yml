@@ -30,7 +30,7 @@ jobs:
   call-deploy:
     uses: '.github/workflows/deploy_node-generic.yml'
     with:
-      aws_region: ${{ env.AWS_REGION }}
+      aws_region: eu-north-1
       entry_point: 'src/ticketGen.ts'
       lambda_function_name: 'ticketGen'
       service_name: 'ticketGen'
