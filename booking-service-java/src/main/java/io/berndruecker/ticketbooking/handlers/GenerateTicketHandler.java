@@ -37,7 +37,7 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
 
                 // Simulate a network problem to the ticket generation service
                 // AWS prefers RuntimeExceptions, so reshape
-                throw new RuntimeException(new IOException("[Simulated] Could not connect to ticket generation server"));
+                throw new RuntimeException("[Simulated] Could not connect to ticket generation server");
 
             } else {
 
