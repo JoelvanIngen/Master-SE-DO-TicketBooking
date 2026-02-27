@@ -1,0 +1,58 @@
+name: deploy_node-generic.yml
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      working_directory:
+        required: true
+        type: string
+      entry_point:
+        required: true
+        type: string
+      lambda_function_name:
+        required: true
+        type: string
+      aws_region:
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.service_name }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for OIDC authentication
+      contents: read  # Required to check out the repository
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working_directory }}/package-lock.json
+
+      - name: Build and Package
+        run: |
+          cd ${{ inputs.working_directory }}
+          npm ci
+          mkdir -p dist
+          npx esbuild ${{ inputs.entry_point }} --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
+          cd dist && zip ${{ inputs.service_name }}.zip index.js
+
+      - name: Configure AWS credentials
+        if: github.actor != 'dependabot[bot]'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}  # ARN of IAM rile for GitHub Actions OIDC
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Deploy to AWS Lambda
+        if: github.actor != 'dependabot[bot]'
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ inputs.lambda_function_name }} \
+            --zip-file fileb://${{ inputs.working_directory }}/dist/${{ inputs.service_name }}.zip

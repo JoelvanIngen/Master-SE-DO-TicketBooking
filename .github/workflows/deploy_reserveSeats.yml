@@ -8,6 +8,7 @@ on:
       - 'fake-services-nodejs/package.json'
       - 'fake-services-nodejs/tsconfig.json'
       - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
+      - '.github/workflows/deploy_node-generic.yml'
   pull_request:
     branches: ["main"]
     paths:
@@ -15,57 +16,18 @@ on:
       - 'fake-services-nodejs/package.json'
       - 'fake-services-nodejs/tsconfig.json'
       - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
+      - '.github/workflows/deploy_node-generic.yml'
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  AWS_REGION: eu-north-1 
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write # Required for OIDC authentication
-      contents: read  # Required to check out the repository
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20' # Match your Lambda runtime version
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build and Package Functions
-        run: |
-          # Navigate to the subfolder where your code lives
-          cd fake-services-nodejs
-          
-          # Install dependencies in that specific folder
-          npm install
-          
-          # Create a dist folder
-          mkdir -p dist
-          
-          # Bundle your specific file
-          npx esbuild src/reserveSeats.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
-          
-          # Zip only the bundled file
-          cd dist
-          zip reserveSeats.zip index.js
-      
-      - name: Configure AWS credentials
-        if: github.actor != 'dependabot[bot]'
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}  # The role-to-assume should be the ARN of the IAM role you created for GitHub Actions OIDC
-      
-      - name: Deploy to AWS Lambda
-        if: github.actor != 'dependabot[bot]'
-        run: |
-          aws lambda update-function-code \
-            --function-name reserveSeats \
-            --zip-file fileb://fake-services-nodejs/dist/reserveSeats.zip
+  call-deploy:
+    uses: '.github/workflows/deploy_node-generic.yml'
+    with:
+      aws_region: ${{ env.AWS_REGION }}
+      entry_point: 'src/reserveSeats.ts'
+      lambda_function_name: 'reserveSeats'
+      service_name: 'reserveSeats'
+      working_directory: 'fake-services-nodejs'
+    secrets: inherit
