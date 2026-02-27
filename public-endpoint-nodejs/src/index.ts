@@ -50,7 +50,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         bookingReferenceId: bookingReferenceId,
-                        reservationId: output.reservationId, // From Reserve Seats
+                        reservationId: output.reservationInfo?.reservationId, // From Reserve Seats
                         paymentConfirmationId: output.paymentInfo?.paymentConfirmationId, // From Retrieve Payment
                         ticketId: output.ticketInfo?.ticketId, // From Generate Ticket
                         success: true
