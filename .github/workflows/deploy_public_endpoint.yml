@@ -1,67 +1,37 @@
 name: Deploy public endpoint to AWS Lambda
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main", "ci_cd" ]
     paths:
       - 'public-endpoint-nodejs/**'
       - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
+      - '.github/workflows/deploy_node-generic.yml'
   pull_request:
     branches: ["main"]
     paths:
       - 'public-endpoint-nodejs/**'
       - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
+      - '.github/workflows/deploy_node-generic.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  AWS_REGION: eu-north-1 
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  call-deploy:
     permissions:
-      id-token: write # Required for OIDC authentication
-      contents: read  # Required to check out the repository
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build and Package Functions
-        run: |
-          # Navigate to the subfolder where your code lives
-          cd public-endpoint-nodejs
-          
-          # Install dependencies in that specific folder
-          npm install
-          
-          # Create a dist folder
-          mkdir -p dist
-          
-          # Bundle your specific file
-          npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
-          
-          # Zip only the bundled file
-          cd dist
-          zip endpoint.zip index.js
-      
-      - name: Configure AWS credentials
-        if: github.actor != 'dependabot[bot]'
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-      
-      - name: Deploy to AWS Lambda
-        if: github.actor != 'dependabot[bot]'
-        run: |
-          aws lambda update-function-code \
-            --function-name publicEndpoint \
-            --zip-file fileb://public-endpoint-nodejs/dist/endpoint.zip
+      id-token: write
+      contents: read
+    uses: './.github/workflows/deploy_node-generic.yml'
+    with:
+      aws_region: eu-north-1
+      entry_point: 'src/index.ts'
+      lambda_function_name: 'publicEndpoint'
+      service_name: 'publicEndpoint'
+      working_directory: 'public-endpoint-nodejs'
+    secrets: inherit
