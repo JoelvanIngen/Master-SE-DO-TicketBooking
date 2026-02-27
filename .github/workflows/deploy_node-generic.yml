@@ -74,4 +74,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name ${{ inputs.lambda_function_name }} \
-            --zip-file fileb://${{ inputs.working_directory }}/dist/${{ inputs.service_name }}.zip
+            --zip-file fileb://${{ inputs.service_name }}.zip
