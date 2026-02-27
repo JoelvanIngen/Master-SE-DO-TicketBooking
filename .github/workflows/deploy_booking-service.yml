@@ -19,7 +19,7 @@ concurrency:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  AWS_REGION: ${{ env.AWS_REGION }}
+  AWS_REGION: eu-north-1
 
 jobs:
   build:
