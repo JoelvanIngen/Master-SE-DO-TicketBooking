@@ -61,7 +61,7 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
 
                 return Collections.singletonMap(ProcessConstants.VAR_TICKET_ID, ticket.ticketId);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             logger.error("Error calling ticket service", e);
             // AWS prefers RuntimeExceptions, so reshape
             throw new RuntimeException(e);
