@@ -26,3 +26,8 @@ node_modules
 .idea
 
 .DS_Store
+
+# CDK files
+cdk.out/
+.sfn/
+*.stack.reports.json
