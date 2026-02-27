@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "main", "ci_cd" ]
     paths:
-      - 'public-endpoint-nodejs/src/**'
+      - 'public-endpoint-nodejs/**'
       - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   AWS_REGION: eu-north-1 
 
 jobs:
