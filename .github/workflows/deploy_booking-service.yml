@@ -4,8 +4,14 @@ on:
   push:
     branches: ["main", "ci_cd"]
     paths:
-      - 'booking-service-java/src/*'
+      - 'booking-service-java/src/**'
       - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'booking-service-java/src/**'
+      - '.github/workflows/deploy_booking-service.yml' # Also run if this config changes
+
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

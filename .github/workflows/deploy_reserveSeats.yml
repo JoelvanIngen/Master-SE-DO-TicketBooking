@@ -6,6 +6,11 @@ on:
     paths:
       - 'fake-services-nodejs/src/reserveSeats.ts'   # only run if the booking service changed
       - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
+   pull_request:
+    branches: ["main"]
+    paths:
+      - 'fake-services-nodejs/src/reserveSeats.ts'   # only run if the booking service changed
+      - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
