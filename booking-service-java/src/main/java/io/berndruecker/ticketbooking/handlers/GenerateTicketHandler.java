@@ -36,7 +36,6 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
             if ("ticket".equalsIgnoreCase((String) input.get(ProcessConstants.VAR_SIMULATE_BOOKING_FAILURE))) {
 
                 // Simulate a network problem to the ticket generation service
-                // AWS prefers RuntimeExceptions, so reshape
                 throw new RuntimeException("[Simulated] Could not connect to ticket generation server");
 
             } else {
@@ -61,9 +60,8 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
 
                 return Collections.singletonMap(ProcessConstants.VAR_TICKET_ID, ticket.ticketId);
             }
-        } catch (InterruptedException e) {
-            logger.error("Error calling ticket service", e);
-            // AWS prefers RuntimeExceptions, so reshape
+        } catch (Exception e) {
+            logger.error("Error invoking ticket service", e);
             throw new RuntimeException(e);
         }
     }
