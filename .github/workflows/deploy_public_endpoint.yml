@@ -53,12 +53,14 @@ jobs:
           zip endpoint.zip index.js
       
       - name: Configure AWS credentials
+        if: github.actor != 'dependabot[bot]'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
       
       - name: Deploy to AWS Lambda
+        if: github.actor != 'dependabot[bot]'
         run: |
           aws lambda update-function-code \
             --function-name publicEndpoint \

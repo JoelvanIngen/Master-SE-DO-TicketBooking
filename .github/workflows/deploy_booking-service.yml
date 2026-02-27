@@ -42,24 +42,28 @@ jobs:
           mvn clean package -DskipTests
 
       - name: Configure AWS credentials
+        if: github.actor != 'dependabot[bot]'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}  # The role-to-assume should be the ARN of the IAM role you created for GitHub Actions OIDC
 
       - name: 🚀 Deploy to AWS Lambda using CLI (RetrievePayment)
+        if: github.actor != 'dependabot[bot]'
         run: |
           aws lambda update-function-code \
             --function-name retrievePayment \
             --zip-file fileb://booking-service-java/target/booking-service-lambda.jar
       
       - name: 🚀 Deploy to AWS Lambda using CLI (PaymentResponse)
+        if: github.actor != 'dependabot[bot]'
         run: |
           aws lambda update-function-code \
             --function-name PaymentResponseHandler \
             --zip-file fileb://booking-service-java/target/booking-service-lambda.jar
       
       - name: 🚀 Deploy to AWS Lambda using CLI (GenTicket)
+        if: github.actor != 'dependabot[bot]'
         run: |
           aws lambda update-function-code \
             --function-name GenerateTicketHandler \
