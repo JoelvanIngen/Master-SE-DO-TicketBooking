@@ -6,6 +6,11 @@ on:
     paths:
       - 'public-endpoint-nodejs/**'
       - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'public-endpoint-nodejs/**'
+      - '.github/workflows/deploy_public_endpoint.yml'  # Also run if this config changes
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
