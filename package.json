@@ -1,6 +1,11 @@
 {
   "name": "ticket-booking-infra",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "fake-services-nodejs",
+    "public-endpoint-nodejs"
+  ],
   "scripts": {
     "build": "npm run build:java && npm run build:infra",
     "build:java": "mvn -f booking-service-java/pom.xml clean package -DskipTests",
