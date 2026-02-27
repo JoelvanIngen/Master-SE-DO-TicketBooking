@@ -19,6 +19,10 @@ on:
       - '.github/workflows/deploy_ticketGen.yml'  # Also run if this config changes
       - '.github/workflows/deploy_node-generic.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
