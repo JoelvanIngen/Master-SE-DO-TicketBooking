@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.berndruecker.ticketbooking.ProcessConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.InvokeRequest;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Map;
 
@@ -21,14 +21,16 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
     private static final Logger logger = LoggerFactory.getLogger(GenerateTicketHandler.class);
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    private static final HttpClient httpClient = HttpClient.newHttpClient();
+    private static final LambdaClient lambdaClient = LambdaClient.builder()
+            .region(Region.of(System.getenv("AWS_REGION")))
+            .build();
 
-    // URL for ticketId generation service
-    public static String ENDPOINT = System.getenv("TICKETGEN_REQUEST_URL");
+    // Lambda ticket gen function name
+    public static String FUNCTION_NAME = System.getenv("TICKETGEN_FUNCTION_NAME");
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
-        logger.info("Generate ticket via REST [" + input + "]");
+        logger.info("Generate ticket via Lambda Function Invoke [" + input + "]");
 
         try {
             if ("ticket".equalsIgnoreCase((String) input.get(ProcessConstants.VAR_SIMULATE_BOOKING_FAILURE))) {
@@ -39,19 +41,22 @@ public class GenerateTicketHandler implements RequestHandler<Map<String, Object>
 
             } else {
 
-                // Call REST API, simply returns a ticketId
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(ENDPOINT))
-                        .GET()
+                String payload = objectMapper.writeValueAsString(input);
+
+                InvokeRequest invokeRequest = InvokeRequest.builder()
+                        .functionName(FUNCTION_NAME)
+                        .payload(SdkBytes.fromUtf8String(payload))
                         .build();
 
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                InvokeResponse response = lambdaClient.invoke(invokeRequest);
 
-                if (response.statusCode() != 200) {
-                    throw new RuntimeException("REST service returned HTTP " + response.statusCode());
+                if (response.functionError() != null) {
+                    throw new RuntimeException("TicketGen Lambda returned an error: " + response.functionError());
                 }
 
-                CreateTicketResponse ticket = objectMapper.readValue(response.body(), CreateTicketResponse.class);
+                String responseString = response.payload().asUtf8String();
+
+                CreateTicketResponse ticket = objectMapper.readValue(responseString, CreateTicketResponse.class);
                 logger.info("Succeeded with " + ticket);
 
                 return Collections.singletonMap(ProcessConstants.VAR_TICKET_ID, ticket.ticketId);

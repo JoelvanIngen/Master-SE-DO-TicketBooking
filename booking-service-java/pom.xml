@@ -47,6 +47,10 @@
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>sfn</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>lambda</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
