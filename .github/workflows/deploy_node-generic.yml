@@ -39,7 +39,7 @@ jobs:
           npm ci
           mkdir -p dist
           npx esbuild ${{ inputs.entry_point }} --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*
-          cd dist && zip ${{ inputs.service_name }}.zip index.js
+          zip -j ${{ inputs.service_name }}.zip dist/index.js
 
       - name: Upload Package
         uses: actions/upload-artifact@v4
