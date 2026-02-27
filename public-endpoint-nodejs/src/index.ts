@@ -10,7 +10,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const path = event.path;
     const method = event.httpMethod;
 
-    if (method !== "PUT" || (path !== "/ticket" && path !== "/")) {
+    if (method !== "PUT" || (path !== "/ticket")) {
         return {
             statusCode: 404,
             body: JSON.stringify({ error: "Not Found", message: "Not Found" })
