@@ -42,7 +42,7 @@ jobs:
           zip -j ${{ inputs.service_name }}.zip dist/index.js
 
       - name: Upload Package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.service_name }}-artifact
           path: ${{ inputs.working_directory }}/${{ inputs.service_name }}.zip
