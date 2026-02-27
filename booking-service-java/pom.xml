@@ -11,7 +11,7 @@
 
 	<properties>
 		<maven.compiler.release>25</maven.compiler.release>
-		<aws.sdk.version>2.41.31</aws.sdk.version>
+		<aws.sdk.version>2.42.3</aws.sdk.version>
 		<jackson.version>2.21.0</jackson.version>
 	</properties>
 
