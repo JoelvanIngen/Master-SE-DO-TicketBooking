@@ -1,5 +1,5 @@
 {
-  "Comment": "Ticket Booking Workflow - Migrated from Camunda/Zeebe",
+  "Comment": "Ticket Booking Workflow",
   "StartAt": "Reserve Seats",
   "States": {
     "Reserve Seats": {
@@ -7,8 +7,10 @@
       "Resource": "arn:aws:lambda:eu-north-1:771772518287:function:reserveSeats:$LATEST",
       "Comment": "Calls TS Reserve Seats",
       "Parameters": {
-        "simulateBookingFailure.$": "$.simulateBookingFailure"
+        "simulateBookingFailure.$": "$.simulateBookingFailure",
+        "bookingReferenceId.$": "$.bookingReferenceId"
       },
+      "ResultPath": "$.reservationInfo",
       "Catch": [
         {
           "ErrorEquals": [
@@ -25,7 +27,9 @@
       "Parameters": {
         "FunctionName": "arn:aws:lambda:eu-north-1:771772518287:function:retrievePayment:$LATEST",
         "Payload": {
-          "taskToken.$": "$$.Task.Token"
+          "taskToken.$": "$$.Task.Token",
+          "simulateBookingFailure.$": "$.simulateBookingFailure",
+          "bookingReferenceId.$": "$.bookingReferenceId"
         }
       },
       "TimeoutSeconds": 30,
@@ -46,7 +50,11 @@
     "Generate Ticket": {
       "Type": "Task",
       "Resource": "arn:aws:lambda:eu-north-1:771772518287:function:GenerateTicketHandler:$LATEST",
-      "Comment": "Including retries if REST API is not available",
+      "Parameters": {
+        "simulateBookingFailure.$": "$.simulateBookingFailure",
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "reservationId.$": "$.reservationInfo.reservationId"
+      },
       "Retry": [
         {
           "ErrorEquals": [
@@ -57,6 +65,14 @@
           "BackoffRate": 2
         }
       ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Booking Cancelled (Ticket Error)"
+        }
+      ],
       "ResultSelector": {
         "ticketId.$": "$.ticketId"
       },
@@ -64,8 +80,7 @@
       "Next": "Booking Succeeded"
     },
     "Booking Succeeded": {
-      "Type": "Succeed",
-      "Comment": "Returns reservationId, paymentConfirmationId, and ticketId"
+      "Type": "Succeed"
     },
     "Booking Cancelled (Seats Not Available)": {
       "Type": "Fail",
@@ -76,6 +91,11 @@
       "Type": "Fail",
       "Error": "PaymentTimeout",
       "Cause": "Payment not received within 30 seconds"
+    },
+    "Booking Cancelled (Ticket Error)": {
+      "Type": "Fail",
+      "Error": "TicketGenerationFailed",
+      "Cause": "The ticket service is unavailable"
     }
   }
 }
