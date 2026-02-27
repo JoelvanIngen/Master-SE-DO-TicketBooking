@@ -5,11 +5,15 @@ on:
     branches: [ "main", "ci_cd" ]
     paths:
       - 'fake-services-nodejs/src/reserveSeats.ts'   # only run if the booking service changed
+      - 'fake-services-nodejs/package.json'
+      - 'fake-services-nodejs/tsconfig.json'
       - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
    pull_request:
     branches: ["main"]
     paths:
       - 'fake-services-nodejs/src/reserveSeats.ts'   # only run if the booking service changed
+      - 'fake-services-nodejs/package.json'
+      - 'fake-services-nodejs/tsconfig.json'
       - '.github/workflows/deploy_reserveSeats.yml'  # Also run if this config changes
 
 env:
