@@ -25,7 +25,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const bookingReferenceId = uuidv4();
 
         const workflowInput = {
-            // bookingReferenceId,
+            bookingReferenceId,
             simulateBookingFailure: simulateBookingFailure || "none"
         };
 
