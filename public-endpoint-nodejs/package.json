@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Public API Gateway wrapper",
   "main": "dist/index.js",
+  "workspaces": [
+    "fake-services-nodejs",
+    "public-endpoint-nodejs"
+  ],
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
     "package": "npm run build && cd dist && zip function.zip index.js",
