@@ -49,6 +49,7 @@ export class TicketBookingStack extends cdk.Stack {
             handler: 'io.berndruecker.ticketbooking.handlers.RetrievePaymentHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
             timeout: cdk.Duration.seconds(15),
+            memorySize: 512,
             environment: { PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl },
         });
 
@@ -57,6 +58,7 @@ export class TicketBookingStack extends cdk.Stack {
             handler: 'io.berndruecker.ticketbooking.handlers.GenerateTicketHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
             timeout: cdk.Duration.seconds(15),
+            memorySize: 512,
             environment: { TICKETGEN_FUNCTION_NAME: ticketGen.functionName },
         });
 
@@ -64,6 +66,7 @@ export class TicketBookingStack extends cdk.Stack {
             runtime: lambda.Runtime.JAVA_25,
             handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
+            memorySize: 512,
             timeout: cdk.Duration.seconds(15),
         });
         paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
