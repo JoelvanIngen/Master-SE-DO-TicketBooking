@@ -44,30 +44,30 @@ export class TicketBookingStack extends cdk.Stack {
         // Java Lambdas
         const bookingJavaJar = 'booking-service-java/target/booking-service-lambda.jar';
 
-        const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
+        const javaFunctionProps = {
             runtime: lambda.Runtime.JAVA_25,
+            memorySize: 512,
+            timeout: cdk.Duration.seconds(15),
+        }
+
+        const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
+            ...javaFunctionProps,
             handler: 'io.berndruecker.ticketbooking.handlers.RetrievePaymentHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
-            timeout: cdk.Duration.seconds(15),
-            memorySize: 512,
             environment: { PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl },
         });
 
         const generateTicket = new lambda.Function(this, 'GenerateTicketHandler', {
-            runtime: lambda.Runtime.JAVA_25,
+            ...javaFunctionProps,
             handler: 'io.berndruecker.ticketbooking.handlers.GenerateTicketHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
-            timeout: cdk.Duration.seconds(15),
-            memorySize: 512,
             environment: { TICKETGEN_FUNCTION_NAME: ticketGen.functionName },
         });
 
         const paymentResponseHandler = new lambda.Function(this, 'PaymentResponseHandler', {
-            runtime: lambda.Runtime.JAVA_25,
+            ...javaFunctionProps,
             handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
-            memorySize: 512,
-            timeout: cdk.Duration.seconds(15),
         });
         paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
 
