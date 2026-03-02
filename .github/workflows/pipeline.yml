@@ -69,6 +69,10 @@ jobs:
       id-token: write
       contents: read
 
+    env:
+      # PR number for PRs, 'Prod' for main branch pushes
+      STACK_ENV: ${{ github.event_name == 'pull_request' && format('PR-{0}', github.event.number) || 'Prod' }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -101,4 +105,5 @@ jobs:
       - name: CDK Deploy
         run: |
           npm ci
-          npx cdk deploy --require-approval never
+          export STACK_ENV=${{ env.STACK_ENV }}
+          npx cdk deploy "TicketBookingStack-$STACK_ENV" --require-approval never
