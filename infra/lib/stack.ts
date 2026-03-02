@@ -48,6 +48,7 @@ export class TicketBookingStack extends cdk.Stack {
             runtime: lambda.Runtime.JAVA_25,
             handler: 'io.berndruecker.ticketbooking.handlers.RetrievePaymentHandler',
             code: lambda.Code.fromAsset(bookingJavaJar),
+            timeout: cdk.Duration.seconds(15),
             environment: { PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl },
         });
 
