@@ -7,6 +7,10 @@ on:
 jobs:
   destroy:
     runs-on: ubuntu-latest
+
+    # Dependabot cannot create PR stacks so removing wouldn't work
+    if: github.actor != 'dependabot[bot]'
+
     permissions:
       id-token: write
       contents: read

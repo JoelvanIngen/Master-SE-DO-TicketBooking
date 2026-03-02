@@ -63,8 +63,11 @@ jobs:
     needs: [ build-java, build-node, test-infra ]
     runs-on: ubuntu-latest
 
-    # Dependabot not allowed to break production
-    if: github.actor != 'dependabot[bot]'
+    # Disallows dependabot creating PR stacks, but does update production on merge
+    if: |
+      github.event_name == 'push' || 
+      (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]')
+
     permissions:
       id-token: write
       contents: read
