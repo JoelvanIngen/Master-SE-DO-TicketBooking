@@ -48,6 +48,7 @@ export class TicketBookingStack extends cdk.Stack {
             runtime: lambda.Runtime.JAVA_25,
             memorySize: 512,
             timeout: cdk.Duration.seconds(15),
+            snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
         }
 
         const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
