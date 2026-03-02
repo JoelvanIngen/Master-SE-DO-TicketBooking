@@ -46,7 +46,7 @@ export class TicketBookingStack extends cdk.Stack {
 
         const javaFunctionProps = {
             runtime: lambda.Runtime.JAVA_25,
-            memorySize: 512,
+            memorySize: 2048,
             timeout: cdk.Duration.seconds(15),
             snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
         }
