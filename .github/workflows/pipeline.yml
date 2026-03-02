@@ -32,7 +32,6 @@ jobs:
     with:
       working_directory: ${{ matrix.dir }}
       artifact_name: ${{ matrix.name }}
-      node_version: '${{ env.NODE_VERSION }}'
 
   test-infra:
     name: Test Infrastructure

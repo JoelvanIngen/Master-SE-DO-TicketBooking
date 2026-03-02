@@ -8,9 +8,10 @@ on:
       artifact_name:
         required: true
         type: string
-      node_version:
-        required: true
-        type: number
+
+
+env:
+  NODE_VERSION: 24
 
 
 jobs:
@@ -20,10 +21,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js ${{ inputs.node_version }}
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
         with:
-          node-version: '${{ inputs.node_version }}'
+          node-version: '${{ env.NODE_VERSION }}'
           cache: 'npm'
           cache-dependency-path: './${{ inputs.working_directory }}/package-lock.json'
 
