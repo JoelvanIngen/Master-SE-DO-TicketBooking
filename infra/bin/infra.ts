@@ -8,7 +8,7 @@ const envName = process.env.STACK_ENV || 'Prod';
 const stackName = `TicketBookingStack-${envName}`;
 
 const app = new cdk.App();
-new TicketBookingStack(app, 'TicketBookingStack', {
+new TicketBookingStack(app, stackName, {
     env: {
         account: process.env.CDK_DEFAULT_ACCOUNT,
         region: 'eu-north-1'
