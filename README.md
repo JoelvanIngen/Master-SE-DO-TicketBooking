@@ -25,13 +25,13 @@ We use **GitHub Actions** to automate the deployment process:
 ## Testing
 When deployed, a ticket can be generated as follows:
 ```
-curl -i -X PUT "https://REDACTED.lambda-url.eu-north-1.on.aws/ticket"
+curl -i -X PUT "https://[GATEWAY-URL]/ticket"
 ```
 
 Two types of simulated failures are currently supported, and they can be tested using
 ```
-curl -i -X PUT "https://REDACTED.lambda-url.eu-north-1.on.aws/ticket?simulateBookingFailure=seats"
+curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=seats"
 ```
 ```
-curl -i -X PUT "https://REDACTED.lambda-url.eu-north-1.on.aws/ticket?simulateBookingFailure=ticket"
+curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=ticket"
 ```
