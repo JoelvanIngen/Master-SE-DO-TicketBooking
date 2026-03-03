@@ -9,7 +9,7 @@
     "test": "echo \"No tests specified yet\""
   },
   "dependencies": {
-    "@aws-sdk/client-sfn": "^3.0.0"
+    "@aws-sdk/client-sfn": "^3.1000.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",
