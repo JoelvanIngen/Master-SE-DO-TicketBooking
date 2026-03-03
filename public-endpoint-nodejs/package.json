@@ -9,13 +9,10 @@
     "test": "echo \"No tests specified yet\""
   },
   "dependencies": {
-    "@aws-sdk/client-sfn": "^3.0.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.0",
-    "@types/node": "^20.0.0",
-    "esbuild": "^0.20.0",
-    "typescript": "^5.0.0",
-    "uuid": "^8.3.2"
+    "@aws-sdk/client-sfn": "^3.0.0",
+    "@types/aws-lambda": "^8.10.0"
   }
 }
