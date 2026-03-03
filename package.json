@@ -1,5 +1,24 @@
 {
+  "name": "ticket-booking-infra",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "fake-services-nodejs",
+    "public-endpoint-nodejs"
+  ],
+  "scripts": {
+    "build": "npm run build:java && npm run build:infra",
+    "build:java": "mvn -f booking-service-java/pom.xml clean package -DskipTests",
+    "build:infra": "tsc",
+    "cdk": "cdk"
+  },
   "devDependencies": {
-    "esbuild": "^0.27.3"
+    "aws-cdk": "^2.1108.0",
+    "aws-cdk-lib": "^2.240.0",
+    "constructs": "^10.5.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "esbuild": "0.27.3",
+    "@types/node": "^25.3.2"
   }
 }
