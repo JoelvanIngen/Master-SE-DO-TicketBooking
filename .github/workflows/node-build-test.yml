@@ -30,9 +30,8 @@ jobs:
 
       - name: Install & Test
         run: |
-          cd ${{ inputs.working_directory }}
           npm ci
-          npm test
+          npm test --workspace=${{ inputs.working_directory }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
