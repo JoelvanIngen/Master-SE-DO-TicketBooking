@@ -18,8 +18,5 @@
     "esbuild": "0.27.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "uuid": "^13.0.0"
   }
 }
