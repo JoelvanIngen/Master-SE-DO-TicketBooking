@@ -8,22 +8,6 @@ updates:
       aws-sdk:
         patterns: [ "software.amazon.awssdk:*" ]
 
-  - package-ecosystem: "npm"
-    directory: "/fake-services-nodejs"
-    schedule:
-      interval: "daily"
-    groups:
-      aws-sdk:
-        patterns: [ "@aws-sdk/*" ]
-
-  - package-ecosystem: "npm"
-    directory: "/public-endpoint-nodejs"
-    schedule:
-      interval: "daily"
-    groups:
-      aws-sdk:
-        patterns: [ "@aws-sdk/*" ]
-
   # Although we should probably make sure we don't put those files in the root folder?
   # But I'll add this for now
   - package-ecosystem: "npm"
