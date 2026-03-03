@@ -9,7 +9,7 @@
     "test": "echo \"No tests specified yet\""
   },
   "dependencies": {
-    "uuid": "^8.3.2"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@aws-sdk/client-sfn": "^3.0.0",
