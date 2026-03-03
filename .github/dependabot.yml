@@ -8,8 +8,6 @@ updates:
       aws-sdk:
         patterns: [ "software.amazon.awssdk:*" ]
 
-  # Although we should probably make sure we don't put those files in the root folder?
-  # But I'll add this for now
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
