@@ -25,6 +25,11 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: eu-north-1
 
+      - name: Create Fake Asset
+        run: |
+          mkdir -p booking-service-java/target/
+          touch booking-service-java/target/booking-service-lambda.jar
+
       - name: Destroy PR Stack
         run: |
           npm ci
