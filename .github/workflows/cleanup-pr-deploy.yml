@@ -25,7 +25,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: eu-north-1
 
-      - name: Destroy CDK
+      - name: Destroy PR Stack
         run: |
           npm ci
           export STACK_ENV=PR-${{ github.event.number }}
