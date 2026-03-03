@@ -12,6 +12,9 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      aws-sdk:
+        patterns: [ "@aws-sdk/*" ]
 
   - package-ecosystem: "github-actions"
     directory: "/"
