@@ -21,7 +21,7 @@ jobs:
 
       - name: Spotless Format Check
         working-directory: ./booking-service-java
-        run: mvn spotless:check
+        run: mvn -B -ntp spotless:check
 
       - name: Build
         id: build
