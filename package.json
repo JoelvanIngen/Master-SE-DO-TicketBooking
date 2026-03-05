@@ -8,7 +8,7 @@
     "infra"
   ],
   "scripts": {
-    "asl-validate": "asl-validator --data-path ticket-booking.asl.json",
+    "asl-validate": "asl-validator --yaml-path ticket-booking.asl.json",
     "build": "npm run build:java && npm run build:infra",
     "build:java": "mvn -f booking-service-java/pom.xml clean package -DskipTests",
     "build:infra": "tsc",
