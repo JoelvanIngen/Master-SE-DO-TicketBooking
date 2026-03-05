@@ -9,7 +9,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   // ONLY run on /ticket
   // This is hacky, we should extract this logic or use some middleware
   const path = event.rawPath;
-  const method = event.requestContext?.http?.method;
+  const method = event.requestContext.http.method;
 
   if (method !== 'PUT' || path !== '/ticket') {
     return {
