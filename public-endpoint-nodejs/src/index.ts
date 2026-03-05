@@ -76,7 +76,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         return {
             statusCode: 202,
-            body: JSON.stringify({ message: "Timeout waiting for workflow", bookingReferenceId, executionArn })
+            body: ""
         };
 
     } catch (error: any) {
