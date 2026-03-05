@@ -116,5 +116,11 @@ export class TicketBookingStack extends cdk.Stack {
         reserveSeats.grantInvoke(stateMachine);
         retrievePayment.grantInvoke(stateMachine);
         generateTicket.grantInvoke(stateMachine);
+
+        // Output gateway URL so we can use it for e2e testing
+        new cdk.CfnOutput(this, 'ApiGatewayUrl', {
+            value: httpApi.apiEndpoint,
+            description: 'The URL of the API Gateway',
+        });
     }
 }
