@@ -29,7 +29,7 @@ jobs:
         id: spotbugs
         continue-on-error: true
         working-directory: ./booking-service-java
-        run: mvn spotbugs:check
+        run: mvn compile spotbugs:check
 
       - name: Build
         id: build
