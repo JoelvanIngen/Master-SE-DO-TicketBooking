@@ -123,6 +123,12 @@ jobs:
           STACK_NAME="TicketBookingStack-${{ env.STACK_ENV }}"
           API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiGatewayUrl" cdk-outputs.json)
           
+          # Stop if URL not found, tests mysteriously fail otherwise
+          if [ -z "$API_URL" ]; then
+            echo "Error: Could not find ApiGatewayUrl for stack $STACK_NAME in cdk-outputs.json"
+            exit 1
+          fi
+          
           # Mask the URL from ever appearing in logs so people cannot drain our AWS credits by spamming the endpoint
           # We can safely remove this later if we decide we don't care
           echo "::add-mask::$API_URL"
