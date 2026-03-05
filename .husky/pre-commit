@@ -1,13 +1,12 @@
 # Extremely extremely hacky solution, I hate this and I cannot believe there is no better way of doing this
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=d -- '*.java')
-if [ -z "$STAGED_FILES" ]; then
-    exit 0
+if [ -n "$STAGED_FILES" ]; then
+    mvn -B -q -f booking-service-java/pom.xml spotless:apply
+    git add $STAGED_FILES
 fi
-mvn -B -q -f booking-service-java/pom.xml spotless:apply
-git add $STAGED_FILES
 
 # Lint staged files
-npx lint-staged
+    npx lint-staged
 
 # Secrets
 gitleaks protect -v --staged
