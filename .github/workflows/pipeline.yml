@@ -111,4 +111,42 @@ jobs:
         run: |
           npm ci
           export STACK_ENV=${{ env.STACK_ENV }}
-          npx cdk deploy "TicketBookingStack-$STACK_ENV" --require-approval never
+          npx cdk deploy "TicketBookingStack-$STACK_ENV" --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Extract API URL
+        id: extract-url
+        run: |
+          # Retrieve URL from JSON file
+          STACK_NAME="TicketBookingStack-${{ env.STACK_ENV }}"
+          API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiGatewayUrl" cdk-outputs.json)
+          
+          # Mask the URL from ever appearing in logs so people cannot drain our AWS credits by spamming the endpoint
+          # We can safely remove this later if we decide we don't care
+          echo "::add-mask::$API_URL"
+          
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+  e2e-test:
+    name: End-to-End Tests
+    needs: [ deploy ]
+    runs-on: ubuntu-latest
+
+    # Only if deploy was successful
+    if: success()
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      - name: Run E2E Tests
+        env:
+          API_URL: ${{ needs.deploy.outputs.api_url }}
+        run: |
+          npx tsx --test tests/e2e/booking.test.ts
