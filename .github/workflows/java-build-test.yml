@@ -29,14 +29,14 @@ jobs:
         id: spotbugs
         continue-on-error: true
         working-directory: ./booking-service-java
-        run: mvn compile spotbugs:check
+        run: mvn -B -ntp compile spotbugs:check
 
       - name: Build
         id: build
         continue-on-error: true
         working-directory: ./booking-service-java
         # Runs tests, compilation, integrated plugins
-        run: mvn clean verify
+        run: mvn -B -ntp clean verify
 
       - name: Stop on Failure
         if: steps.spotless.outcome == 'failure' ||

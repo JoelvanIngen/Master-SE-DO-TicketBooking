@@ -57,7 +57,7 @@ jobs:
 
       - if: matrix.language == 'java'
         name: Build Java
-        run: mvn -f booking-service-java/pom.xml clean install -DskipTests
+        run: mvn -B -ntp -f booking-service-java/pom.xml clean install -DskipTests
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
