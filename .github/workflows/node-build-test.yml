@@ -5,6 +5,9 @@ on:
       working_directory:
         required: true
         type: string
+      readable_name:
+        required: true
+        type: string
       artifact_name:
         required: true
         type: string
@@ -14,6 +17,7 @@ env:
 
 jobs:
   build-and-test:
+    name: Build and Test ${{ inputs.readable_name }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

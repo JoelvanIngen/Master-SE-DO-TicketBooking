@@ -25,13 +25,16 @@ jobs:
       matrix:
         include:
           - dir: 'public-endpoint-nodejs'
-            name: 'public-endpoint-node-assets'
+            name: 'Public Endpoint'
+            asset-name: 'public-endpoint-node-assets'
           - dir: 'fake-services-nodejs'
-            name: 'fake-services-node-assets'
+            name: 'Fake Services'
+            asset-name: 'fake-services-node-assets'
     uses: './.github/workflows/node-build-test.yml'
     with:
       working_directory: ${{ matrix.dir }}
-      artifact_name: ${{ matrix.name }}
+      readable_name: ${{ matrix.name }}
+      artifact_name: ${{ matrix.asset-name }}
 
   test-infra:
     name: Test Infrastructure
