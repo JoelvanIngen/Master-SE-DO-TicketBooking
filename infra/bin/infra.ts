@@ -11,10 +11,10 @@ const stackName = `TicketBookingStack-${envName}`;
 
 const app = new cdk.App();
 new TicketBookingStack(app, stackName, {
-    env: {
-        account: process.env.CDK_DEFAULT_ACCOUNT,
-        region: 'eu-north-1'
-    },
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: 'eu-north-1',
+  },
 });
 
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
