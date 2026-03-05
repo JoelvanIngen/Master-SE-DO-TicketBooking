@@ -25,13 +25,13 @@ jobs:
 
       - name: Build
         id: build
-        if: ! cancelled()
+        if: (! cancelled())
         working-directory: ./booking-service-java
         # Runs tests, compilation, integrated plugins
         run: mvn -B -ntp verify
 
       - name: SpotBugs Check
-        if: ! cancelled() && steps.build.outcome == 'success'
+        if: (! cancelled()) && steps.build.outcome == 'success'
         working-directory: ./booking-service-java
         run: mvn -B -ntp spotbugs:check
 
