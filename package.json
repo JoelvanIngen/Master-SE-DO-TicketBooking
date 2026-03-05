@@ -45,9 +45,6 @@
     ],
     "*.asl.json": [
       "asl-validator --yaml-path"
-    ],
-    "*.md": [
-      "prettier --write"
     ]
   }
 }
