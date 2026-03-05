@@ -8,8 +8,8 @@ const STATE_MACHINE_ARN = process.env.STATE_MACHINE_ARN;
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // ONLY run on /ticket
   // This is hacky, we should extract this logic or use some middleware
-  const path = event.rawPath || event.path;
-  const method = event.requestContext?.http?.method || event.httpMethod;
+  const path = event.path;
+  const method = event.httpMethod;
 
   if (method !== 'PUT' || path !== '/ticket') {
     return {
