@@ -83,9 +83,7 @@
       "Type": "Succeed"
     },
     "Booking Cancelled (Seats Not Available)": {
-      "Type": "Fail",
-      "Error": "ErrorSeatsNotAvailable",
-      "Cause": "Seats not available for this booking reference"
+      "Type": "Succeed"
     },
     "Booking Cancelled (Timeout)": {
       "Type": "Fail",

@@ -45,6 +45,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             if (status.status === "SUCCEEDED") {
                 const output = JSON.parse(status.output || "{}");
 
+                const ticketId = output.ticketInfo?.ticketId || null;
+
                 return {
                     statusCode: 200,
                     headers: { "Content-Type": "application/json" },
@@ -52,8 +54,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                         bookingReferenceId: bookingReferenceId,
                         reservationId: output.reservationInfo?.reservationId, // From Reserve Seats
                         paymentConfirmationId: output.paymentInfo?.paymentConfirmationId, // From Retrieve Payment
-                        ticketId: output.ticketInfo?.ticketId, // From Generate Ticket
-                        success: true
+                        ticketId: ticketId, // From Generate Ticket
+                        success: !!ticketId
                     })
                 };
             } else if (status.status === "FAILED" || status.status === "TIMED_OUT" || status.status === "ABORTED") {
