@@ -31,31 +31,31 @@ jobs:
         run: npm ci
 
       - name: Security Audit
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npm audit --audit-level=high
 
       - name: Check Formatting (Prettier)
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npx prettier --check .
 
       - name: Lint (ESLint)
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npx eslint .
 
       - name: Type Check
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npm run type-check
 
       - name: Validate ASL
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npm run asl-validate
 
       - name: Test
-        if: steps.deps.outcome == 'success'
+        if: (! cancelled()) && steps.deps.outcome == 'success'
         run: npm test --workspace=${{ inputs.working_directory }}
 
       - name: Upload Artifact
-        if: success()
+        if: (! cancelled()) && success()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}
