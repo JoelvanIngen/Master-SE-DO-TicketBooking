@@ -22,7 +22,7 @@ jobs:
     uses: './.github/workflows/java-build-test.yml'
 
   build-node:
-    name: NodeJS
+    name: NodeJS ${{ matrix.name }}
     strategy:
       matrix:
         include:
