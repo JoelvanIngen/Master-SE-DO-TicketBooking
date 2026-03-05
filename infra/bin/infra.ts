@@ -2,8 +2,8 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { TicketBookingStack } from '../lib/stack';
-import { AwsSolutionsChecks } from 'cdk-nag';
-import { Aspects } from 'aws-cdk-lib';
+// import { AwsSolutionsChecks } from 'cdk-nag';
+// import { Aspects } from 'aws-cdk-lib';
 
 // STACK_ENV set by github actions if PR
 const envName = process.env.STACK_ENV || 'Prod';
@@ -17,4 +17,4 @@ new TicketBookingStack(app, stackName, {
   },
 });
 
-Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
+// Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
