@@ -60,8 +60,8 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 3,
+          "IntervalSeconds": 15,
+          "MaxAttempts": 4,
           "BackoffRate": 2
         }
       ],
