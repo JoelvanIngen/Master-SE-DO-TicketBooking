@@ -26,12 +26,15 @@
     "asl-validator": "^4.0.0",
     "esbuild": "0.27.3",
     "eslint": "^10.0.2",
+    "globals": "^17.4.0",
     "husky": "^9.1.7",
+    "jiti": "^2.6.1",
     "lint-staged": "^16.3.2",
     "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   },
   "lint-staged": {
     "*.{ts,js,json,yml,yaml,md}": [
