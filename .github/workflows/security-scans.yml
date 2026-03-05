@@ -1,9 +1,9 @@
 name: security-scans.yml
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
   schedule:
     # Weekly in case vulnerabilities are found in already existing packages
     - cron: '0 0 * * 0'
@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java', 'javascript' ]
+        language: ['java', 'javascript']
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -39,7 +39,7 @@ jobs:
       - name: Initialise CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ maxtrix.language }}
+          languages: ${{ matrix.language }}
 
       - if: matrix.language == 'java'
         name: Build Java
