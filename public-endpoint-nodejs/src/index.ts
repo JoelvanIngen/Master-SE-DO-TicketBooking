@@ -37,23 +37,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const { executionArn } = await sfnClient.send(startCommand);
 
         // Poll for the result (Standard Workflows are async)
-        // Poll every 2 seconds for a max of 30 seconds
-        for (let i = 0; i < 15; i++) {
+        // Poll every 2 seconds for a max of 20 seconds
+        for (let i = 0; i < 10; i++) {
             const describeCommand = new DescribeExecutionCommand({ executionArn });
             const status = await sfnClient.send(describeCommand);
 
             if (status.status === "SUCCEEDED") {
                 const output = JSON.parse(status.output || "{}");
 
+                const ticketId = output.ticketInfo?.ticketId || null;
+
                 return {
                     statusCode: 200,
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         bookingReferenceId: bookingReferenceId,
-                        reservationId: output.reservationInfo?.reservationId, // From Reserve Seats
-                        paymentConfirmationId: output.paymentInfo?.paymentConfirmationId, // From Retrieve Payment
-                        ticketId: output.ticketInfo?.ticketId, // From Generate Ticket
-                        success: true
+                        reservationId: output.reservationInfo?.reservationId || null, // From Reserve Seats
+                        paymentConfirmationId: output.paymentInfo?.paymentConfirmationId || null, // From Retrieve Payment
+                        ticketId: ticketId, // From Generate Ticket
+                        success: !!ticketId,
                     })
                 };
             } else if (status.status === "FAILED" || status.status === "TIMED_OUT" || status.status === "ABORTED") {
@@ -63,7 +65,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                         error: "Workflow failed",
                         status: status.status,
                         cause: status.cause,
-                        bookingReferenceId
+                        bookingReferenceId: bookingReferenceId,
                     })
                 };
             }
@@ -74,13 +76,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         return {
             statusCode: 202,
-            body: JSON.stringify({ message: "Timeout waiting for workflow", bookingReferenceId, executionArn })
+            body: "",
         };
 
     } catch (error: any) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: error.message })
+            body: JSON.stringify({ error: error.message }),
         };
     }
 };
