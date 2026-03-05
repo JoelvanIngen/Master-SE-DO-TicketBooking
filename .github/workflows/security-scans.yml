@@ -28,7 +28,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   codeql:
-    name: CodeQL Analysis (${{ matrix.display_name }})
+    name: CodeQL Analysis / ${{ matrix.display_name }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
