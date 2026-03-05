@@ -9,10 +9,8 @@ on:
         required: true
         type: string
 
-
 env:
   NODE_VERSION: 24
-
 
 jobs:
   build-and-test:
@@ -29,50 +27,35 @@ jobs:
           cache-dependency-path: './package-lock.json'
 
       - name: Install Dependencies
+        id: deps
         run: npm ci
 
       - name: Security Audit
-        id: sec
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npm audit --audit-level=high
 
       - name: Check Formatting (Prettier)
-        id: form
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npx prettier --check .
 
       - name: Lint (ESLint)
-        id: lint
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npx eslint .
 
       - name: Type Check
-        id: type
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npm run type-check
 
       - name: Validate ASL
-        id: asl
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npm run asl-validate
 
       - name: Test
-        id: test
-        continue-on-error: true
+        if: steps.deps.outcome == 'success'
         run: npm test --workspace=${{ inputs.working_directory }}
 
-      - name: Stop on Failure
-        if: steps.sec.outcome == 'failure' ||
-            steps.form.outcome == 'failure' ||
-            steps.lint.outcome == 'failure' ||
-            steps.type.outcome == 'failure' ||
-            steps.asl.outcome == 'failure' ||
-            steps.test.outcome == 'failure'
-        run: |
-          echo "One or multiple steps failed, exiting."
-          exit 1
-
       - name: Upload Artifact
+        if: success()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}
