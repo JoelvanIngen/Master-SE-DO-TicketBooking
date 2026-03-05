@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
+        with:
+          # Hopefully prevent Gitleaks crash on first commit of PR?
+          fetch-depth: 0
 
       - name: Gitleaks Scan
         uses: gitleaks/gitleaks-action@v2
