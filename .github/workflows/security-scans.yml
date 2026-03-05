@@ -28,7 +28,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   codeql:
-    name: CodeQL
+    name: CodeQL Analysis (${{ matrix.display_name }})
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -37,7 +37,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['java', 'javascript']
+        include:
+          - language: 'java'
+            display_name: 'Java'
+          - language: 'javascript'
+            display_name: 'NodeJS'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
