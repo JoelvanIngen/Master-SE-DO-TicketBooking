@@ -25,7 +25,7 @@ public class GenerateTicketHandler
             LambdaClient.builder().region(Region.of(System.getenv("AWS_REGION"))).build();
 
     // Lambda ticket gen function name
-    public static String FUNCTION_NAME = System.getenv("TICKETGEN_FUNCTION_NAME");
+    public static final String FUNCTION_NAME = System.getenv("TICKETGEN_FUNCTION_NAME");
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
