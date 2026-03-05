@@ -1,4 +1,4 @@
-name: security-scans.yml
+name: Security
 on:
   push:
     branches: ['main']

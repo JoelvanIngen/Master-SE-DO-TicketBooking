@@ -18,10 +18,11 @@ env:
 
 jobs:
   build-java:
+    name: Java
     uses: './.github/workflows/java-build-test.yml'
 
   build-node:
-    name: Build NodeJS Services
+    name: NodeJS
     strategy:
       matrix:
         include:
