@@ -44,7 +44,7 @@
       "eslint --fix"
     ],
     "*.asl.json": [
-      "asl-validator --data-path"
+      "asl-validator --yaml-path"
     ],
     "*.md": [
       "prettier --write"
