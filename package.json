@@ -50,7 +50,7 @@
       "prettier --write"
     ],
     "booking-service-java/src/**/*.java": [
-      "mvn -f booking-service-java/pom.xml spotless:apply -DspotlessFiles"
+      "mvn -f booking-service-java/pom.xml spotless:apply"
     ]
   }
 }
