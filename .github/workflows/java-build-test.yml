@@ -20,31 +20,20 @@ jobs:
           cache: 'maven'
 
       - name: Spotless Format Check
-        id: spotless
-        continue-on-error: true
         working-directory: ./booking-service-java
         run: mvn spotless:check
 
-      - name: SpotBugs Check
-        id: spotbugs
-        continue-on-error: true
-        working-directory: ./booking-service-java
-        run: mvn -B -ntp compile spotbugs:check
-
       - name: Build
         id: build
-        continue-on-error: true
+        if: always()
         working-directory: ./booking-service-java
         # Runs tests, compilation, integrated plugins
-        run: mvn -B -ntp clean verify
+        run: mvn -B -ntp verify
 
-      - name: Stop on Failure
-        if: steps.spotless.outcome == 'failure' ||
-          steps.spotbugs.outcome == 'failure' ||
-          steps.build.outcome == 'failure'
-        run: |
-          echo "One or multiple steps failed, exiting."
-          exit 1
+      - name: SpotBugs Check
+        if: steps.build.outcome == 'success'
+        working-directory: ./booking-service-java
+        run: mvn -B -ntp spotbugs:check
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
