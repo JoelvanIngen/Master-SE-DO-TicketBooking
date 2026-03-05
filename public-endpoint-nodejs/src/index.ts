@@ -37,8 +37,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const { executionArn } = await sfnClient.send(startCommand);
 
         // Poll for the result (Standard Workflows are async)
-        // Poll every 2 seconds for a max of 30 seconds
-        for (let i = 0; i < 15; i++) {
+        // Poll every 2 seconds for a max of 20 seconds
+        for (let i = 0; i < 10; i++) {
             const describeCommand = new DescribeExecutionCommand({ executionArn });
             const status = await sfnClient.send(describeCommand);
 
