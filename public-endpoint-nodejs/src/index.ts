@@ -1,15 +1,15 @@
 import { SFNClient, StartExecutionCommand, DescribeExecutionCommand } from '@aws-sdk/client-sfn';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 
 const sfnClient = new SFNClient({});
 const STATE_MACHINE_ARN = process.env.STATE_MACHINE_ARN;
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
   // ONLY run on /ticket
   // This is hacky, we should extract this logic or use some middleware
-  const path = event.path;
-  const method = event.httpMethod;
+  const path = event.rawPath;
+  const method = event.requestContext?.http?.method;
 
   if (method !== 'PUT' || path !== '/ticket') {
     return {
