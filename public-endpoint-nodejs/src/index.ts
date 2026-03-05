@@ -7,10 +7,8 @@ const STATE_MACHINE_ARN = process.env.STATE_MACHINE_ARN;
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
   // ONLY run on /ticket
-  // This is hacky, we should extract this logic or use some middleware
   const path = event.rawPath;
   const method = event.requestContext.http.method;
-
   if (method !== 'PUT' || path !== '/ticket') {
     return {
       statusCode: 404,
