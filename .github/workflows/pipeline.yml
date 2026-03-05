@@ -65,6 +65,9 @@ jobs:
     needs: [ build-java, build-node, test-infra ]
     runs-on: ubuntu-latest
 
+    outputs:
+      api_url: ${{ steps.extract-url.outputs.api_url }}
+
     # Disallows dependabot creating PR stacks, but does update production on merge
     if: |
       github.event_name == 'push' || 
