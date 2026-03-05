@@ -55,7 +55,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                         reservationId: output.reservationInfo?.reservationId, // From Reserve Seats
                         paymentConfirmationId: output.paymentInfo?.paymentConfirmationId, // From Retrieve Payment
                         ticketId: ticketId, // From Generate Ticket
-                        success: !!ticketId
+                        success: !!ticketId,
                     })
                 };
             } else if (status.status === "FAILED" || status.status === "TIMED_OUT" || status.status === "ABORTED") {
@@ -65,7 +65,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                         error: "Workflow failed",
                         status: status.status,
                         cause: status.cause,
-                        bookingReferenceId
+                        bookingReferenceId,
                     })
                 };
             }
@@ -76,13 +76,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         return {
             statusCode: 202,
-            body: ""
+            body: "",
         };
 
     } catch (error: any) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: error.message })
+            body: JSON.stringify({ error: error.message }),
         };
     }
 };
