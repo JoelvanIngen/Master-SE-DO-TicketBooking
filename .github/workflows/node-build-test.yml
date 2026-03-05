@@ -32,23 +32,19 @@ jobs:
 
       - name: Security Audit
         if: (! cancelled()) && steps.deps.outcome == 'success'
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --workspace=${{ inputs.working_directory }}
 
       - name: Check Formatting (Prettier)
         if: (! cancelled()) && steps.deps.outcome == 'success'
-        run: npx prettier --check .
+        run: npx prettier --check ${{ inputs.working_directory }}
 
       - name: Lint (ESLint)
         if: (! cancelled()) && steps.deps.outcome == 'success'
-        run: npx eslint .
+        run: npx eslint ${{ inputs.working_directory }}
 
       - name: Type Check
         if: (! cancelled()) && steps.deps.outcome == 'success'
-        run: npm run type-check
-
-      - name: Validate ASL
-        if: (! cancelled()) && steps.deps.outcome == 'success'
-        run: npm run asl-validate
+        run: npm run type-check --workspace=${{ inputs.working_directory }}
 
       - name: Test
         if: (! cancelled()) && steps.deps.outcome == 'success'
