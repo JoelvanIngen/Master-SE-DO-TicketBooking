@@ -8,6 +8,9 @@ on:
     # Weekly in case vulnerabilities are found in already existing packages
     - cron: '0 0 * * 0'
 
+env:
+  JAVA_VERSION: 25
+
 jobs:
   gitleaks:
     name: Gitleaks
@@ -43,6 +46,14 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+
+      - if: matrix.language == 'java'
+        name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
 
       - if: matrix.language == 'java'
         name: Build Java
