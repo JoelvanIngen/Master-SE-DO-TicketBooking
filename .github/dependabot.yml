@@ -1,22 +1,22 @@
 version: 2
 updates:
-  - package-ecosystem: "maven"
-    directory: "/booking-service-java"
+  - package-ecosystem: 'maven'
+    directory: '/booking-service-java'
     schedule:
-      interval: "daily"
+      interval: 'daily'
     groups:
       aws-sdk:
-        patterns: [ "software.amazon.awssdk:*" ]
+        patterns: ['software.amazon.awssdk:*']
 
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'daily'
     groups:
       aws-sdk:
-        patterns: [ "@aws-sdk/*" ]
+        patterns: ['@aws-sdk/*']
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'daily'

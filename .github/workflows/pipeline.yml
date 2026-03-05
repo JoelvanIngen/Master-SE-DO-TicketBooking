@@ -2,10 +2,10 @@ name: pipeline.yml
 on:
   push:
     branches:
-      - "main"
+      - 'main'
   pull_request:
     branches:
-      - "main"
+      - 'main'
   workflow_dispatch:
 
 # Stop old pipeline if new one starts
@@ -62,7 +62,7 @@ jobs:
 
   deploy:
     name: Deploy to AWS
-    needs: [ build-java, build-node, test-infra ]
+    needs: [build-java, build-node, test-infra]
     runs-on: ubuntu-latest
 
     outputs:
@@ -122,18 +122,18 @@ jobs:
           # Retrieve URL from JSON file
           STACK_NAME="TicketBookingStack-${{ env.STACK_ENV }}"
           API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiGatewayUrl" cdk-outputs.json)
-          
+
           # Stop if URL not found, tests mysteriously fail otherwise
           if [ -z "$API_URL" ]; then
             echo "Error: Could not find ApiGatewayUrl for stack $STACK_NAME in cdk-outputs.json"
             exit 1
           fi
-          
+
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
 
   e2e-test:
     name: End-to-End Tests
-    needs: [ deploy ]
+    needs: [deploy]
     runs-on: ubuntu-latest
 
     # Only if deploy was successful
