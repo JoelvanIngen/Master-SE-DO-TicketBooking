@@ -65,7 +65,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
                         error: "Workflow failed",
                         status: status.status,
                         cause: status.cause,
-                        bookingReferenceId,
+                        bookingReferenceId: bookingReferenceId,
                     })
                 };
             }
