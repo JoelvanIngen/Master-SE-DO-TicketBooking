@@ -129,10 +129,6 @@ jobs:
             exit 1
           fi
           
-          # Mask the URL from ever appearing in logs so people cannot drain our AWS credits by spamming the endpoint
-          # We can safely remove this later if we decide we don't care
-          echo "::add-mask::$API_URL"
-          
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
 
   e2e-test:
