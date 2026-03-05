@@ -8,16 +8,46 @@
     "infra"
   ],
   "scripts": {
+    "asl-validate": "asl-validator --data-path ticket-booking.asl.json",
     "build": "npm run build:java && npm run build:infra",
     "build:java": "mvn -f booking-service-java/pom.xml clean package -DskipTests",
     "build:infra": "tsc",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "type-check": "npm exec --workspaces -- tsc --noEmit"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.2",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "asl-validator": "^4.0.0",
     "esbuild": "0.27.3",
+    "eslint": "^10.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.{ts,js,json,yml,yaml,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,js}": [
+      "eslint --fix"
+    ],
+    "*.asl.json": [
+      "asl-validator --data-path"
+    ],
+    "*.md": [
+      "prettier --write"
+    ],
+    "booking-service-java/src/**/*.java": [
+      "mvn -f booking-service-java/pom.xml spotless:apply -DspotlessFiles"
+    ]
   }
 }

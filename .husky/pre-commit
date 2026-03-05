@@ -1,0 +1,5 @@
+# Lint staged files
+npx lint-staged
+
+# Secrets
+gitleaks protect -v --staged
