@@ -73,7 +73,7 @@ export class TicketBookingStack extends cdk.Stack {
       handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
       code: lambda.Code.fromAsset(bookingJavaJar),
     });
-    paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
+    paymentResponseHandler.currentVersion.addEventSource(new SqsEventSource(paymentResponseQueue));
 
     // Step Function Machine
     const stateMachine = new sfn.StateMachine(this, 'BookingStateMachine', {
@@ -128,7 +128,7 @@ export class TicketBookingStack extends cdk.Stack {
     ticketGen.grantInvoke(generateTicket);
     stateMachine.grantStartExecution(publicEndpoint);
     stateMachine.grantRead(publicEndpoint);
-    stateMachine.grantTaskResponse(paymentResponseHandler);
+    stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
 
     reserveSeats.grantInvoke(stateMachine);
     retrievePayment.currentVersion.grantInvoke(stateMachine);
