@@ -1,0 +1,22 @@
+config:
+  target: "https://vmk2msgnjxyi6qqvw6r5c2zckm0xwxyl.lambda-url.eu-north-1.on.aws"
+  phases:
+    - duration: 60
+      arrivalRate: 1
+      rampTo: 2
+      name: "Ramping up to target load"
+    - duration: 120
+      arrivalRate: 2
+      name: "Sustaining 2 requests per second for two minutes"
+  
+  plugins:
+    ensure:
+      thresholds:
+        - http.codes.200: 95 # Fail if less than 95% of responses are OK
+        - http.response_time.p99: 10000 # Fail if 99% of requests take > 10s
+
+scenarios:
+  - name: "Request Tickets"
+    flow:
+      - put:
+          url: "/ticket"
