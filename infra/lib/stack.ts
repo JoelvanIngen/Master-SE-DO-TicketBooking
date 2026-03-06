@@ -70,7 +70,7 @@ export class TicketBookingStack extends cdk.Stack {
       handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
       code: lambda.Code.fromAsset(bookingJavaJar),
     });
-    paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
+    paymentResponseHandler.currentVersion.addEventSource(new SqsEventSource(paymentResponseQueue));
 
     // Step Function Machine
     const stateMachine = new sfn.StateMachine(this, 'BookingStateMachine', {
@@ -78,8 +78,9 @@ export class TicketBookingStack extends cdk.Stack {
       definitionSubstitutions: {
         // Must match ticket-booking.asl.json placeholders
         ReserveSeatsArn: reserveSeats.functionArn,
-        RetrievePaymentArn: retrievePayment.functionArn,
-        GenerateTicketArn: generateTicket.functionArn,
+        // Pin specific version to allow snapstart
+        RetrievePaymentArn: retrievePayment.currentVersion.functionArn,
+        GenerateTicketArn: generateTicket.currentVersion.functionArn,
       },
     });
 
@@ -87,7 +88,7 @@ export class TicketBookingStack extends cdk.Stack {
     stateMachine.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['lambda:InvokeFunction'],
-        resources: [retrievePayment.functionArn],
+        resources: [retrievePayment.currentVersion.functionArn],
       }),
     );
 
@@ -113,11 +114,11 @@ export class TicketBookingStack extends cdk.Stack {
     ticketGen.grantInvoke(generateTicket);
     stateMachine.grantStartExecution(publicEndpoint);
     stateMachine.grantRead(publicEndpoint);
-    stateMachine.grantTaskResponse(paymentResponseHandler);
+    stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
 
     reserveSeats.grantInvoke(stateMachine);
-    retrievePayment.grantInvoke(stateMachine);
-    generateTicket.grantInvoke(stateMachine);
+    retrievePayment.currentVersion.grantInvoke(stateMachine);
+    generateTicket.currentVersion.grantInvoke(stateMachine);
 
     // Output gateway URL so we can use it for e2e testing
     new cdk.CfnOutput(this, 'ApiGatewayUrl', {
