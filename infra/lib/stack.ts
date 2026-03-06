@@ -9,11 +9,6 @@ import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-node
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class TicketBookingStack extends cdk.Stack {
-<<<<<<< 104-fix-snapstart
-  public readonly table: dynamodb.Table;
-
-=======
->>>>>>> main
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
