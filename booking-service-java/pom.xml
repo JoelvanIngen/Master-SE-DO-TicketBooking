@@ -12,7 +12,10 @@
 	<properties>
 		<maven.compiler.release>25</maven.compiler.release>
 		<aws.sdk.version>2.42.5</aws.sdk.version>
+		<aws.lambda.java.core.version>1.2.3</aws.lambda.java.core.version>
+		<aws.lambda.java.events.version>3.11.4</aws.lambda.java.events.version>
 		<jackson.version>2.21.0</jackson.version>
+		<slf4j.version>2.0.17</slf4j.version>
 	</properties>
 
 	<dependencyManagement>
@@ -31,12 +34,12 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-core</artifactId>
-			<version>1.2.3</version>
+			<version>${aws.lambda.java.core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-events</artifactId>
-			<version>3.11.4</version>
+			<version>${aws.lambda.java.events.version>}</version>
 		</dependency>
 
 		<dependency>
@@ -65,12 +68,12 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>2.0.17</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
-			<version>2.0.17</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 	</dependencies>
 
