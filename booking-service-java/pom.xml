@@ -13,6 +13,7 @@
 		<maven.compiler.release>25</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+		<!-- Dependency versions -->
 		<aws.sdk.version>2.42.5</aws.sdk.version>
 		<aws.lambda.java.core.version>1.4.0</aws.lambda.java.core.version>
 		<aws.lambda.java.events.version>3.16.1</aws.lambda.java.events.version>
@@ -33,6 +34,7 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<!-- Lambda runtime -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-core</artifactId>
@@ -44,6 +46,7 @@
 			<version>${aws.lambda.java.events.version}</version>
 		</dependency>
 
+		<!-- SDK modules -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>sqs</artifactId>
@@ -57,12 +60,14 @@
 			<artifactId>lambda</artifactId>
 		</dependency>
 
+		<!-- JSON processing -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
 
+		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -77,7 +82,9 @@
 
 	<build>
 		<finalName>booking-service-lambda</finalName>
+
 		<plugins>
+			<!-- Shade plugin for far JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -94,6 +101,8 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!-- Spotless for code formatting -->
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
@@ -107,6 +116,8 @@
 					</java>
 				</configuration>
 			</plugin>
+
+			<!-- Spotbugs for static analysis -->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
