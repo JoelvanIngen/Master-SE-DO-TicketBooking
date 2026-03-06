@@ -11,6 +11,8 @@
 
 	<properties>
 		<maven.compiler.release>25</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
 		<aws.sdk.version>2.42.5</aws.sdk.version>
 		<aws.lambda.java.core.version>1.4.0</aws.lambda.java.core.version>
 		<aws.lambda.java.events.version>3.16.1</aws.lambda.java.events.version>
