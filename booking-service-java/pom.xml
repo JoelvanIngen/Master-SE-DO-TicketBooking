@@ -75,7 +75,8 @@
 	</dependencies>
 
 	<build>
-		<finalName>booking-service-lambda</finalName> <plugins>
+		<finalName>booking-service-lambda</finalName>
+		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
