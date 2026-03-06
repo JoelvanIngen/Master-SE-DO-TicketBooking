@@ -5,17 +5,19 @@ on:
       working_directory:
         required: true
         type: string
+      readable_name:
+        required: true
+        type: string
       artifact_name:
         required: true
         type: string
 
-
 env:
   NODE_VERSION: 24
 
-
 jobs:
   build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -28,12 +30,32 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './package-lock.json'
 
-      - name: Install & Test
-        run: |
-          npm ci
-          npm test --workspace=${{ inputs.working_directory }}
+      - name: Install Dependencies
+        id: deps
+        run: npm ci
+
+      - name: Security Audit
+        if: (! cancelled()) && steps.deps.outcome == 'success'
+        run: npm audit --audit-level=high --workspace=${{ inputs.working_directory }}
+
+      - name: Check Formatting (Prettier)
+        if: (! cancelled()) && steps.deps.outcome == 'success'
+        run: npx prettier --check ${{ inputs.working_directory }}
+
+      - name: Lint (ESLint)
+        if: (! cancelled()) && steps.deps.outcome == 'success'
+        run: npx eslint ${{ inputs.working_directory }}
+
+      - name: Type Check
+        if: (! cancelled()) && steps.deps.outcome == 'success'
+        run: npm run type-check --workspace=${{ inputs.working_directory }}
+
+      - name: Test
+        if: (! cancelled()) && steps.deps.outcome == 'success'
+        run: npm test --workspace=${{ inputs.working_directory }}
 
       - name: Upload Artifact
+        if: (! cancelled()) && success()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}

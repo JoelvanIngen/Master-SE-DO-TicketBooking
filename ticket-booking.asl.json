@@ -13,9 +13,7 @@
       "ResultPath": "$.reservationInfo",
       "Catch": [
         {
-          "ErrorEquals": [
-            "ErrorSeatsNotAvailable"
-          ],
+          "ErrorEquals": ["ErrorSeatsNotAvailable"],
           "Next": "Booking Cancelled (Seats Not Available)"
         }
       ],
@@ -39,9 +37,7 @@
       "ResultPath": "$.paymentInfo",
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.Timeout"
-          ],
+          "ErrorEquals": ["States.Timeout"],
           "Next": "Booking Cancelled (Timeout)"
         }
       ],
@@ -57,9 +53,7 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "IntervalSeconds": 15,
           "MaxAttempts": 4,
           "BackoffRate": 2
@@ -67,9 +61,7 @@
       ],
       "Catch": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "Next": "Booking Cancelled (Ticket Error)"
         }
       ],

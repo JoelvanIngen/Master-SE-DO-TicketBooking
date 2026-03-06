@@ -6,7 +6,8 @@
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
     "package": "npm run build && cd dist && zip function.zip index.js",
-    "test": "echo \"No tests specified yet\""
+    "test": "echo \"No tests specified yet\"",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "uuid": "^13.0.0"

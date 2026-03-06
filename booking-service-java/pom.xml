@@ -122,6 +122,24 @@
 					<mainClass>io.berndruecker.ticketbooking.TicketBookingApplication</mainClass>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>3.3.0</version>
+				<configuration>
+					<java>
+						<googleJavaFormat>
+							<version>1.35.0</version>
+							<style>AOSP</style>
+						</googleJavaFormat>
+					</java>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.9.8.2</version>
+			</plugin>
 		</plugins>
 	</build>
 </project>

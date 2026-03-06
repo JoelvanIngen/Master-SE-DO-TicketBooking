@@ -4,17 +4,17 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.berndruecker.ticketbooking.ProcessConstants;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-public class RetrievePaymentHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+public class RetrievePaymentHandler
+        implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentResponseHandler.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -39,12 +39,14 @@ public class RetrievePaymentHandler implements RequestHandler<Map<String, Object
             messagePayload.put("taskToken", taskToken);
 
             // Send SQS Message
-            sqsClient.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(SQS_QUEUE_URL)
-                    .messageBody(objectMapper.writeValueAsString(messagePayload))
-                    .build());
+            sqsClient.sendMessage(
+                    SendMessageRequest.builder()
+                            .queueUrl(SQS_QUEUE_URL)
+                            .messageBody(objectMapper.writeValueAsString(messagePayload))
+                            .build());
 
-            return Collections.singletonMap(ProcessConstants.VAR_PAYMENT_REQUEST_ID, paymentRequestId);
+            return Collections.singletonMap(
+                    ProcessConstants.VAR_PAYMENT_REQUEST_ID, paymentRequestId);
 
         } catch (Exception e) {
             logger.error("Failed to send payment request to SQS", e);

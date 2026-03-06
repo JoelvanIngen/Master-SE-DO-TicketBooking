@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no tests specified\""
+    "test": "echo \"No tests specified yet\"",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
