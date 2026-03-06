@@ -19,6 +19,12 @@
 		<aws.lambda.java.events.version>3.16.1</aws.lambda.java.events.version>
 		<jackson.version>2.21.0</jackson.version>
 		<slf4j.version>2.0.17</slf4j.version>
+
+		<!-- Plugin versions -->
+		<maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
+		<spotless.maven.plugin.version>3.3.0</spotless.maven.plugin.version>
+		<spotbugs.maven.plugin.version>4.9.8.2</spotbugs.maven.plugin.version>
+		<google.java.format.version>1.35.0</google.java.format.version>
 	</properties>
 
 	<dependencyManagement>
@@ -88,7 +94,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>${maven.shade.plugin.version}</version>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
 				</configuration>
@@ -106,11 +112,11 @@
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>${spotless.maven.plugin.version}</version>
 				<configuration>
 					<java>
 						<googleJavaFormat>
-							<version>1.35.0</version>
+							<version>${google.java.format.version}</version>
 							<style>AOSP</style>
 						</googleJavaFormat>
 					</java>
@@ -121,7 +127,7 @@
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.9.8.2</version>
+				<version>${spotbugs.maven.plugin.version</version>
 			</plugin>
 		</plugins>
 	</build>
