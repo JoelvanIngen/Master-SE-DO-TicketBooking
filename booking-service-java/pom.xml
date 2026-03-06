@@ -97,6 +97,20 @@
 				<version>${maven.shade.plugin.version}</version>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<!-- Stop "strong encapsulation" warnings -->
+								<exclude>module-info.class</exclude>
+								<exclude>META-INF/versions/9/module-info.class</exclude>
+								<!-- Remove signature files that cause warnings -->
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
 				</configuration>
 				<executions>
 					<execution>
