@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -10,8 +9,6 @@ import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-node
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class TicketBookingStack extends cdk.Stack {
-  public readonly table: dynamodb.Table;
-  
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -108,17 +105,6 @@ export class TicketBookingStack extends cdk.Stack {
       path: '/ticket',
       methods: [apigateway.HttpMethod.PUT],
       integration: new HttpLambdaIntegration('PublicEndpointIntegration', publicEndpoint),
-    });
-
-    // DynamoDB Table
-    this.table = new dynamodb.Table(this, 'TicketTable', {
-      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      pointInTimeRecoverySpecification: {
-        pointInTimeRecoveryEnabled: true,
-      },
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     // IAM Permissions
