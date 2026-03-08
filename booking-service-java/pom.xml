@@ -11,8 +11,20 @@
 
 	<properties>
 		<maven.compiler.release>25</maven.compiler.release>
-		<aws.sdk.version>2.42.7</aws.sdk.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<!-- Dependency versions -->
+		<aws.sdk.version>2.42.5</aws.sdk.version>
+		<aws.lambda.java.core.version>1.4.0</aws.lambda.java.core.version>
+		<aws.lambda.java.events.version>3.16.1</aws.lambda.java.events.version>
 		<jackson.version>2.21.0</jackson.version>
+		<slf4j.version>2.0.17</slf4j.version>
+
+		<!-- Plugin versions -->
+		<maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
+		<spotless.maven.plugin.version>3.3.0</spotless.maven.plugin.version>
+		<spotbugs.maven.plugin.version>4.9.8.2</spotbugs.maven.plugin.version>
+		<google.java.format.version>1.35.0</google.java.format.version>
 	</properties>
 
 	<dependencyManagement>
@@ -28,17 +40,19 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<!-- Lambda runtime -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-core</artifactId>
-			<version>1.2.3</version>
+			<version>${aws.lambda.java.core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-events</artifactId>
-			<version>3.11.4</version>
+			<version>${aws.lambda.java.events.version}</version>
 		</dependency>
 
+		<!-- SDK modules -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>sqs</artifactId>
@@ -52,59 +66,70 @@
 			<artifactId>lambda</artifactId>
 		</dependency>
 
+		<!-- JSON processing -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
 
+		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>2.0.17</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
-			<version>2.0.17</version>
-		</dependency>
-		<dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-core</artifactId>
-            <version>1.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>2.42.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-nop</artifactId>
-            <version>2.0.16</version>
-        </dependency>
-		<dependency>
-			<groupId>com.amazonaws.serverless</groupId>
-			<artifactId>aws-serverless-java-container-springboot2</artifactId>
-			<version>1.9.4</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 	</dependencies>
 
 	<build>
-		<finalName>booking-service-lambda</finalName> <plugins>
+		<finalName>booking-service-lambda</finalName>
+
+		<plugins>
+			<!-- Shade plugin for far JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.6.2</version>
-				<dependencies>
-					<dependency>
-					<groupId>org.vafer</groupId>
-					<artifactId>jdependency</artifactId>
-					<version>2.14</version>
-					</dependency>
-				</dependencies>
+				<version>${maven.shade.plugin.version}</version>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<!-- Stop "strong encapsulation" warnings -->
+								<exclude>module-info.class</exclude>
+								<exclude>META-INF/versions/9/module-info.class</exclude>
+								<!-- Remove signature files that cause warnings -->
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+
+								<exclude>META-INF/MANIFEST.MF</exclude>
+								<exclude>META-INF/DEPENDENCIES</exclude>
+								<exclude>META-INF/io.netty.versions.properties</exclude>
+
+								<exclude>META-INF/FastDoubleParser-LICENSE</exclude>
+								<exclude>META-INF/FastDoubleParser-NOTICE</exclude>
+								<exclude>META-INF/thirdparty-LICENSE</exclude>
+							</excludes>
+						</filter>
+					</filters>
+					<transformers>
+						<!-- Merge files, otherwise we're bombarded with build warnings -->
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+							<addHeader>false</addHeader>
+						</transformer>
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+							<mainClass>io.berndruecker.ticketbooking.handlers.GenerateTicketHandler</mainClass>
+						</transformer>
+					</transformers>
 				</configuration>
 				<executions>
 					<execution>
@@ -115,30 +140,27 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<configuration>
-					<mainClass>io.berndruecker.ticketbooking.TicketBookingApplication</mainClass>
-				</configuration>
-			</plugin>
+
+			<!-- Spotless for code formatting -->
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>${spotless.maven.plugin.version}</version>
 				<configuration>
 					<java>
 						<googleJavaFormat>
-							<version>1.35.0</version>
+							<version>${google.java.format.version}</version>
 							<style>AOSP</style>
 						</googleJavaFormat>
 					</java>
 				</configuration>
 			</plugin>
+
+			<!-- Spotbugs for static analysis -->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.9.8.2</version>
+				<version>${spotbugs.maven.plugin.version}</version>
 			</plugin>
 		</plugins>
 	</build>
