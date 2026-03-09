@@ -162,12 +162,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '${{ env.NODE_VERSION }}'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
 
       - name: Run E2E Tests
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
         run: |
-          npm install tsx
+          npm install
           npx tsx --test tests/e2e/booking.test.ts
 
   load-test:
