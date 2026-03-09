@@ -85,7 +85,8 @@ jobs:
     # Disallows dependabot creating PR stacks, but does update production on merge
     if: |
       github.event_name == 'push' || 
-      (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]')
+      (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]') ||
+      github.event_name == 'workflow_dispatch'
 
     permissions:
       id-token: write
