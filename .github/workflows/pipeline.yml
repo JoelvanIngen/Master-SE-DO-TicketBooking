@@ -195,8 +195,6 @@ jobs:
       - name: Run Load Suite (Lowest to Highest)
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
-          ARTILLERY_DISABLE_TELEMETRY: 'false'
-          ARTILLERY_API_KEY: ${{ secrets.ARTILLERY_API_KEY }}
         run: |
           # In order
           TEST_FILES=(
@@ -207,15 +205,24 @@ jobs:
             "full_load"
           )
 
+          mkdir reports
+
           for STRATEGY in "${TEST_FILES[@]}"; do
             echo "Starting Load Strategy: $STRATEGY"
 
             npx artillery run \
-              --record \
-              --key "$ARTILLERY_API_KEY" \
+              --output "reports/$STRATEGY.json" \
               --env-name "$STRATEGY" \
               "tests/load_tests/$STRATEGY.yaml"
 
             echo "Completed $STRATEGY"
             echo "-------------------------------------------"
           done
+
+      - name: Upload Load Test Reports
+        uses: actions/upload-artifact@v7
+        if: always() # Also if a test fails
+        with:
+          name: artillery-load-reports
+          path: reports/
+          retention-days: 7
