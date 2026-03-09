@@ -10,11 +10,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/lib-dynamodb": "^3.1004.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@aws-sdk/client-sfn": "^3.1003.0",
+    "@aws-sdk/lib-dynamodb": "^3.1004.0",
     "@types/aws-lambda": "^8.10.0"
   }
 }
