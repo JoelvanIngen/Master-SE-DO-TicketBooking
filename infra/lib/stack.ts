@@ -85,7 +85,7 @@ export class TicketBookingStack extends cdk.Stack {
       definitionBody: sfn.DefinitionBody.fromFile('ticket-booking.asl.json'),
       definitionSubstitutions: {
         // Must match ticket-booking.asl.json placeholders
-        ReserveSeatsArn: reserveSeats.functionArn,
+        ReserveSeatsArn: reserveSeats.currentVersion.functionArn,
         // Pin specific version to allow snapstart
         RetrievePaymentArn: retrievePayment.currentVersion.functionArn,
         GenerateTicketArn: generateTicket.currentVersion.functionArn,
