@@ -169,7 +169,7 @@ jobs:
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
         run: |
-          npm install
+          npm ci
           npx tsx --test tests/e2e/booking.test.ts
 
   load-test:
@@ -193,7 +193,7 @@ jobs:
           cache-dependency-path: './package-lock.json'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run Load Suite (Lowest to Highest)
         env:
