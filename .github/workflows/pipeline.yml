@@ -213,7 +213,6 @@ jobs:
 
             npx artillery run \
               --output "reports/$STRATEGY.json" \
-              --env-name "$STRATEGY" \
               "tests/load_tests/$STRATEGY.yaml"
 
             echo "Completed $STRATEGY"
