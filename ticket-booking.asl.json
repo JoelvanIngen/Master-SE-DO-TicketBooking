@@ -155,7 +155,7 @@
     },
 
     "Booking Succeeded": {
-      "Type": "Fail"
+      "Type": "Succeed"
     },
     "Booking Cancelled (Seats Not Available)": {
       "Type": "Fail"
