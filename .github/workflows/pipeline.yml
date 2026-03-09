@@ -172,6 +172,12 @@ jobs:
   load-test:
     needs: e2e-test
     runs-on: ubuntu-latest
+
+    # Only run manually
+    if: |
+      github.event_name == 'workflow_dispatch' && 
+      inputs.run_load_tests == true
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
