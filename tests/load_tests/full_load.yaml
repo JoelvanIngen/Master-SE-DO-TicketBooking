@@ -1,5 +1,5 @@
 config:
-  target: 'https://vmk2msgnjxyi6qqvw6r5c2zckm0xwxyl.lambda-url.eu-north-1.on.aws'
+  target: '{{ $processEnvironment.API_URL }}'
   phases:
     - duration: 60
       arrivalRate: 1
@@ -16,7 +16,22 @@ config:
         - http.response_time.p99: 10000 # Fail if 99% of requests take > 10s
 
 scenarios:
-  - name: 'Request Tickets'
+  - name: 'Request ticket and poll for completion'
     flow:
       - put:
           url: '/ticket'
+          capture:
+            json: '$.bookingReferenceId'
+            as: 'refId'
+
+      # Wait 5 seconds
+      - think: 5
+
+      - loop:
+          - get:
+              url: '/ticket/{{ refId }}'
+              capture:
+                json: '$.status'
+                as: 'currentStatus'
+          - think: 2
+        whileTrue: "currentStatus == 'PENDING'"
