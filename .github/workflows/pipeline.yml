@@ -7,6 +7,12 @@ on:
     branches:
       - 'main'
   workflow_dispatch:
+    inputs:
+      run_load_tests:
+        description: 'Set to "true" at manual workflow dispatch to run the load test suite'
+        required: false
+        default: false
+        type: boolean
 
 # Stop old pipeline if new one starts
 concurrency:
@@ -162,3 +168,48 @@ jobs:
         run: |
           npm install tsx
           npx tsx --test tests/e2e/booking.test.ts
+
+  load-test:
+    needs: e2e-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Load Suite (Lowest to Highest)
+        env:
+          API_URL: ${{ needs.deploy.outputs.api_url }}
+          ARTILLERY_DISABLE_TELEMETRY: 'false'
+          ARTILLERY_API_KEY: ${{ secrets.ARTILLERY_API_KEY }}
+        run: |
+          # In order
+          TEST_FILES=(
+            "extremely_low_load"
+            "low_load"
+            "low_medium_load"
+            "medium_load"
+            "full_load"
+          )
+
+          for STRATEGY in "${TEST_FILES[@]}"; do
+            echo "Starting Load Strategy: $STRATEGY"
+
+            npx artillery run \
+              --record \
+              --key "$ARTILLERY_API_KEY" \
+              --env-name "$STRATEGY" \
+              "tests/load_tests/$STRATEGY.yaml"
+
+            echo "Completed $STRATEGY"
+            echo "-------------------------------------------"
+          done
