@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       run_load_tests:
-        description: 'Set to "true" at manual workflow dispatch to run the load test suite'
+        description: 'Run Load Test Suite'
         required: false
         default: false
         type: boolean
