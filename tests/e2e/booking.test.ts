@@ -33,7 +33,7 @@ async function pollUntilComplete(bookingReferenceId: string): Promise<BookingRes
     assert.strictEqual(response.status, 200, 'GET endpoint should return 200 OK');
 
     const data = (await response.json()) as BookingResponse;
-    if (data.status !== 'PENDING') {
+    if (data.status !== 'PENDING' && data.status !== 'RUNNING') {
       return data;
     }
     // Wait 2 seconds
