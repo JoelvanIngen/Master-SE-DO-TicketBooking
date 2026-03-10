@@ -34,4 +34,4 @@ scenarios:
                 json: '$.status'
                 as: 'currentStatus'
           - think: 5
-        whileTrue: "currentStatus == 'PENDING'"
+        whileTrue: "currentStatus == 'PENDING' || currentStatus == 'RUNNING'"
