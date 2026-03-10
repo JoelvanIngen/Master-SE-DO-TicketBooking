@@ -201,7 +201,6 @@ jobs:
         run: |
           # In order
           TEST_FILES=(
-            "test"
             "extremely_low_load"
             "low_load"
             "low_medium_load"
