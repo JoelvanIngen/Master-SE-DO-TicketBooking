@@ -1,7 +1,19 @@
 {
   "Comment": "Ticket Booking Workflow",
-  "StartAt": "Reserve Seats",
+  "StartAt": "Mark as Running",
   "States": {
+    "Mark as Running": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": { "bookingReferenceId": { "S.$": "$.bookingReferenceId" } },
+        "UpdateExpression": "SET #status = :status",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": { ":status": { "S": "RUNNING" } }
+      },
+      "Next": "Reserve Seats"
+    },
     "Reserve Seats": {
       "Type": "Task",
       "Resource": "${ReserveSeatsArn}",
