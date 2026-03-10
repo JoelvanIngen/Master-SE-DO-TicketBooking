@@ -33,5 +33,5 @@ scenarios:
               capture:
                 json: '$.status'
                 as: 'currentStatus'
-          - think: 2
+          - think: 5
         whileTrue: "currentStatus == 'PENDING'"
