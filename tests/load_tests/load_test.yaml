@@ -11,8 +11,8 @@ config:
     metrics-by-endpoint: {}
     ensure:
       thresholds:
-        - http.codes.2xx: 95 # Fail if less than 95% of responses are OK
         - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
+      maxErrorRate: 5 # Fails if the error rate exceeds 5%
 
   # Run via: artillery run -e medium_load load_test.yaml
   environments:
