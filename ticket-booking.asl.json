@@ -21,10 +21,11 @@
     },
     "Retrieve Payment": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Resource": "arn:aws:states:::sqs:sendMessage.waitForTaskToken",
       "Parameters": {
-        "FunctionName": "${RetrievePaymentArn}",
-        "Payload": {
+        "QueueUrl": "${PAYMENT_REQUEST_QUEUE_URL}",
+        "MessageBody": {
+          "paymentRequestId.$": "States.UUID()",
           "taskToken.$": "$$.Task.Token",
           "simulateBookingFailure.$": "$.simulateBookingFailure",
           "bookingReferenceId.$": "$.bookingReferenceId"
