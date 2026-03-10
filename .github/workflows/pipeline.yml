@@ -173,7 +173,7 @@ jobs:
           npx tsx --test tests/e2e/booking.test.ts
 
   load-test:
-    needs: e2e-test
+    needs: [deploy, e2e-test]
     runs-on: ubuntu-latest
 
     # Only run manually
