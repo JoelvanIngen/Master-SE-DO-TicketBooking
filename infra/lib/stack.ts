@@ -21,6 +21,7 @@ export class TicketBookingStack extends cdk.Stack {
     const nodeJsFunctionProps: NodejsFunctionProps = {
       runtime: lambda.Runtime.NODEJS_24_X,
       bundling: { externalModules: ['@aws-sdk/*'] },
+      architecture: lambda.Architecture.ARM_64,
     };
 
     // Fake Services NodeJS Lambdas
@@ -49,6 +50,7 @@ export class TicketBookingStack extends cdk.Stack {
       memorySize: 2048,
       timeout: cdk.Duration.seconds(15),
       snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
+      architecture: lambda.Architecture.ARM_64,
     };
 
     const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
@@ -70,7 +72,7 @@ export class TicketBookingStack extends cdk.Stack {
       handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
       code: lambda.Code.fromAsset(bookingJavaJar),
     });
-    paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
+    paymentResponseHandler.currentVersion.addEventSource(new SqsEventSource(paymentResponseQueue));
 
     // Step Function Machine
     const stateMachine = new sfn.StateMachine(this, 'BookingStateMachine', {
@@ -78,8 +80,9 @@ export class TicketBookingStack extends cdk.Stack {
       definitionSubstitutions: {
         // Must match ticket-booking.asl.json placeholders
         ReserveSeatsArn: reserveSeats.functionArn,
-        RetrievePaymentArn: retrievePayment.functionArn,
-        GenerateTicketArn: generateTicket.functionArn,
+        // Pin specific version to allow snapstart
+        RetrievePaymentArn: retrievePayment.currentVersion.functionArn,
+        GenerateTicketArn: generateTicket.currentVersion.functionArn,
       },
     });
 
@@ -87,7 +90,7 @@ export class TicketBookingStack extends cdk.Stack {
     stateMachine.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['lambda:InvokeFunction'],
-        resources: [retrievePayment.functionArn],
+        resources: [retrievePayment.currentVersion.functionArn],
       }),
     );
 
@@ -97,6 +100,7 @@ export class TicketBookingStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: cdk.Duration.seconds(60),
       environment: { STATE_MACHINE_ARN: stateMachine.stateMachineArn },
+      architecture: lambda.Architecture.ARM_64,
     });
 
     // HTTP API
@@ -113,11 +117,11 @@ export class TicketBookingStack extends cdk.Stack {
     ticketGen.grantInvoke(generateTicket);
     stateMachine.grantStartExecution(publicEndpoint);
     stateMachine.grantRead(publicEndpoint);
-    stateMachine.grantTaskResponse(paymentResponseHandler);
+    stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
 
     reserveSeats.grantInvoke(stateMachine);
-    retrievePayment.grantInvoke(stateMachine);
-    generateTicket.grantInvoke(stateMachine);
+    retrievePayment.currentVersion.grantInvoke(stateMachine);
+    generateTicket.currentVersion.grantInvoke(stateMachine);
 
     // Output gateway URL so we can use it for e2e testing
     new cdk.CfnOutput(this, 'ApiGatewayUrl', {
