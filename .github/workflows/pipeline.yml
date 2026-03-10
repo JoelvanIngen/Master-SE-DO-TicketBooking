@@ -173,6 +173,7 @@ jobs:
           npx tsx --test tests/e2e/booking.test.ts
 
   load-test:
+    name: Load Test ${{ matrix.name }}
     needs: [deploy, e2e-test]
     runs-on: ubuntu-latest
 
@@ -185,12 +186,17 @@ jobs:
       max-parallel: 1
       fail-fast: true # Set to true if you want to stop the whole suite if one level fails
       matrix:
-        load_level:
-          - extremely_low_load
-          - low_load
-          - low_medium_load
-          - medium_load
-          - full_load
+        include:
+          - name: Extremely Low
+            load_level: extremely_low_load
+          - name: Low
+            load_level: low_load
+          - name: Low-Medium
+            load_level: low_medium_load
+          - name: Medium
+            load_level: medium_load
+          - name: Full
+            load_level: full_load
 
     steps:
       - name: Checkout Code
@@ -206,7 +212,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Load Suite (Lowest to Highest)
+      - name: Run Load Suite ${{ matrix.name }}
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
         run: |
