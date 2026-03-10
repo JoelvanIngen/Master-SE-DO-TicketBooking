@@ -53,7 +53,7 @@ scenarios:
 
       # Poll for results
       - loop:
-          - think: 2 # 2000ms wait between attempts
+          - think: 6 # 6000ms wait between attempts
           - get:
               url: '/ticket/{{ bookingRef }}'
               capture:
@@ -61,7 +61,7 @@ scenarios:
                 as: 'bookingStatus'
               expect:
                 - statusCode: 200
-        count: 30
+        count: 10
         whileTrue: 'shouldKeepPolling'
 
       # Check final status and emit custom metrics
