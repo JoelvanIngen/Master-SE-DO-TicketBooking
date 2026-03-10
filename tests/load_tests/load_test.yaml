@@ -1,0 +1,98 @@
+config:
+  target: '{{ $processEnvironment.API_URL }}'
+  processor: './processor.js'
+  statsInterval: 10
+
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+  plugins:
+    metrics-by-endpoint: {}
+    ensure:
+      thresholds:
+        - http.codes.202: 95 # Fail if less than 95% of responses are OK
+        - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
+
+  # Run via: artillery run -e medium_load load_test.yaml
+  environments:
+    extremely_low_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 2
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 2
+          name: 'Sustaining 2 requests per second for two minutes'
+
+    low_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 5
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 5
+          name: 'Sustaining 5 requests per second for two minutes'
+
+    low_medium_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 25
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 25
+          name: 'Sustaining 25 requests per second for two minutes'
+
+    medium_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 80
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 80
+          name: 'Sustaining 80 requests per second for two minutes'
+
+    full_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 160
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 160
+          name: 'Sustaining 160 requests per second for two minutes'
+
+scenarios:
+  - name: 'Request ticket and poll for completion'
+    flow:
+      # Timer
+      - function: 'startWorkflowTimer'
+
+      # Request ticket
+      - put:
+          url: '/ticket'
+          capture:
+            json: '$.bookingReferenceId'
+            as: 'bookingRef'
+          expect:
+            - statusCode: 202
+
+      # Poll for results
+      - loop:
+          - think: 2 # 2000ms wait between attempts
+          - get:
+              url: '/ticket/{{ bookingRef }}'
+              capture:
+                json: '$.status'
+                as: 'bookingStatus'
+              expect:
+                - statusCode: 200
+        count: 30
+        whileTrue: 'shouldKeepPolling'
+
+      # Check final status and emit custom metrics
+      - function: 'recordWorkflowMetrics'

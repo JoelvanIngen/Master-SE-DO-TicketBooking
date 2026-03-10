@@ -1,54 +1,55 @@
 module.exports = {
-  pollBookingStatus: pollBookingStatus,
+  startWorkflowTimer,
+  shouldKeepPolling,
+  recordWorkflowMetrics,
 };
 
-async function pollBookingStatus(context, ee) {
-  const { bookingRef } = context.vars;
-  const url = `${context.vars.$processEnvironment.API_URL}/ticket/${bookingRef}`;
+/**
+ * Initializes workflow metrics before the HTTP requests begin.
+ */
+function startWorkflowTimer(context, ee, next) {
+  context.vars.workflowStartTime = Date.now();
+  // Initialize status to ensure loop condition evaluates correctly
+  context.vars.bookingStatus = 'PENDING';
+  return next();
+}
 
-  const MAX_RETRIES = 15;
-  const RETRY_INTERVAL_MS = 2000;
+/**
+ * Evaluates whether the loop should continue polling.
+ * Passed into the `whileTrue` block of the Artillery loop.
+ */
+function shouldKeepPolling(context, next) {
+  const status = context.vars.bookingStatus;
 
-  const startTime = Date.now();
+  // Continue polling if the job has not reached terminal state
+  const isStillProcessing = status === 'PENDING' || status === 'RUNNING';
 
-  let attempts = 0;
-  let finished = false;
+  // Artillery whileTrue passes a boolean to `next()`
+  return next(isStillProcessing);
+}
 
-  // Wait a bit before first attempt
-  await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL_MS));
+/**
+ * Runs after the loop completes to show final metrics.
+ */
+function recordWorkflowMetrics(context, ee, next) {
+  const status = context.vars.bookingStatus;
+  const startTime = context.vars.workflowStartTime;
 
-  while (attempts < MAX_RETRIES && !finished) {
-    try {
-      const response = await fetch(url);
+  const isFinished = status !== 'PENDING' && status !== 'RUNNING';
 
-      if (response.status !== 200) {
-        ee.emit('error', `GET returned ${response.status} for ${bookingRef}`);
-        break;
-      }
+  if (isFinished) {
+    // Custom metrics for Artillery reports
+    const metricName = `booking_${status.toLowerCase()}`;
+    ee.emit('counter', metricName, 1);
 
-      const data = await response.json();
-
-      // Check if workflow reached terminal state
-      if (data.status !== 'PENDING' && data.status !== 'RUNNING') {
-        finished = true;
-
-        // Custom metrics for Artillery reports
-        const metricName = `booking_${data.status.toLowerCase()}`;
-        ee.emit('counter', metricName, 1);
-        const duration = Date.now() - startTime;
-        ee.emit('histogram', 'workflow_duration_ms', duration);
-      } else {
-        attempts++;
-        // Wait before next poll
-        await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL_MS));
-      }
-    } catch (err) {
-      ee.emit('error', `Polling error: ${err.message}`);
-      break;
+    if (startTime) {
+      const duration = Date.now() - startTime;
+      ee.emit('histogram', 'workflow_duration_ms', duration);
     }
-  }
-
-  if (!finished) {
+  } else {
+    // Triggered if the loop reached the max count without finishing
     ee.emit('counter', 'booking_timeout', 1);
   }
+
+  return next();
 }
