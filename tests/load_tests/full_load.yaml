@@ -35,3 +35,4 @@ scenarios:
                 as: 'currentStatus'
           - think: 5
         whileTrue: "currentStatus == 'PENDING' || currentStatus == 'RUNNING'"
+        count: 24 # Max 2 minutes
