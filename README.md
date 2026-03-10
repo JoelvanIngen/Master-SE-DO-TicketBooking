@@ -42,3 +42,9 @@ curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=seats"
 ```
 curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=ticket"
 ```
+
+To simulate various levels of load, the `artillery` package can be used to execute load tests found in `tests/load_tests`:
+
+```
+artillery run tests/load_tests/[TEST_NAME].yaml
+```

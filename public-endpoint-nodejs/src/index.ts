@@ -1,86 +1,88 @@
-import { SFNClient, StartExecutionCommand, DescribeExecutionCommand } from '@aws-sdk/client-sfn';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 
-const sfnClient = new SFNClient({});
-const STATE_MACHINE_ARN = process.env.STATE_MACHINE_ARN;
+const ddbClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(ddbClient);
+
+const TABLE_NAME = process.env.TABLE_NAME;
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
-  // ONLY run on /ticket
-  const path = event.rawPath;
   const method = event.requestContext.http.method;
-  if (method !== 'PUT' || path !== '/ticket') {
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ error: 'Not Found', message: 'Not Found' }),
-    };
-  }
+  const path = event.requestContext.http.path;
 
   try {
-    const simulateBookingFailure = event.queryStringParameters?.simulateBookingFailure;
+    // PUT: Return 202 Accepted and process in background
+    if (method === 'PUT' && path === '/ticket') {
+      const simulateBookingFailure = event.queryStringParameters?.simulateBookingFailure || 'none';
+      const bookingReferenceId = uuidv4();
 
-    // I don't think this is used anywhere in the workflow but we can leave it in for completeness
-    const bookingReferenceId = uuidv4();
+      // Save initial status to DDB
+      await docClient.send(
+        new PutCommand({
+          TableName: TABLE_NAME,
+          Item: {
+            bookingReferenceId,
+            status: 'PENDING',
+            simulateBookingFailure,
+          },
+        }),
+      );
 
-    const workflowInput = {
-      bookingReferenceId,
-      simulateBookingFailure: simulateBookingFailure || 'none',
-    };
+      // State machine is automatically started by DynamoDB stream, not here
 
-    // Start Step Function Execution
-    const startCommand = new StartExecutionCommand({
-      stateMachineArn: STATE_MACHINE_ARN,
-      input: JSON.stringify(workflowInput),
-    });
-    const { executionArn } = await sfnClient.send(startCommand);
+      // 3. Return 202 Accepted allowing client to start polling
+      return {
+        statusCode: 202,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingReferenceId }),
+      };
+    }
 
-    // Poll for the result (Standard Workflows are async)
-    // Poll every 2 seconds for a max of 20 seconds
-    for (let i = 0; i < 10; i++) {
-      const describeCommand = new DescribeExecutionCommand({ executionArn });
-      const status = await sfnClient.send(describeCommand);
+    // GET: Get status and return 200 OK with status
+    if (method === 'GET' && path.startsWith('/ticket/')) {
+      const bookingReferenceId = event.pathParameters?.bookingReferenceId || path.split('/')[2];
 
-      if (status.status === 'SUCCEEDED') {
-        const output = JSON.parse(status.output || '{}');
-
-        const ticketId = output.ticketInfo?.ticketId || null;
-
+      // Ensure booking reference id is provided
+      if (!bookingReferenceId) {
         return {
-          statusCode: 200,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingReferenceId: bookingReferenceId,
-            reservationId: output.reservationInfo?.reservationId || null, // From Reserve Seats
-            paymentConfirmationId: output.paymentInfo?.paymentConfirmationId || null, // From Retrieve Payment
-            ticketId: ticketId, // From Generate Ticket
-            success: !!ticketId,
-          }),
-        };
-      } else if (
-        status.status === 'FAILED' ||
-        status.status === 'TIMED_OUT' ||
-        status.status === 'ABORTED'
-      ) {
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            error: 'Workflow failed',
-            status: status.status,
-            cause: status.cause,
-            bookingReferenceId: bookingReferenceId,
-          }),
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Missing bookingReferenceId parameter' }),
         };
       }
 
-      // Wait 2 seconds
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Request status
+      const { Item } = await docClient.send(
+        new GetCommand({
+          TableName: TABLE_NAME,
+          Key: { bookingReferenceId },
+        }),
+      );
+
+      // Ensure if booking reference id exists in DB
+      if (!Item) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ error: 'Booking Reference Not Found' }),
+        };
+      }
+
+      // Return results
+      // We will probably want to reshape a bit to only return useful data but this will do for now
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Item),
+      };
     }
 
     return {
-      statusCode: 202,
-      body: '',
+      statusCode: 404,
+      body: JSON.stringify({ error: 'Route Not Found' }),
     };
   } catch (error: any) {
+    console.error('Error handling request:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
