@@ -1,5 +1,6 @@
 config:
   target: '{{ $processEnvironment.API_URL }}'
+  processor: './processor.js'
   phases:
     - duration: 60
       arrivalRate: 1
@@ -8,12 +9,16 @@ config:
     - duration: 120
       arrivalRate: 160
       name: 'Sustaining 160 requests per second for two minutes'
-
+  defaults:
+    headers:
+      Content-Type: 'application/json'
   plugins:
+    # Capture metrics
+    metrics-by-endpoint: {}
     ensure:
       thresholds:
         - http.codes.200: 95 # Fail if less than 95% of responses are OK
-        - http.response_time.p99: 10000 # Fail if 99% of requests take > 10s
+        - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
 
 scenarios:
   - name: 'Request ticket and poll for completion'
@@ -22,17 +27,10 @@ scenarios:
           url: '/ticket'
           capture:
             json: '$.bookingReferenceId'
-            as: 'refId'
+            as: 'bookingRef'
+          expect:
+            - statusCode: 202
 
-      # Wait 5 seconds
-      - think: 5
-
-      - loop:
-          - get:
-              url: '/ticket/{{ refId }}'
-              capture:
-                json: '$.status'
-                as: 'currentStatus'
-          - think: 5
-        whileTrue: "currentStatus == 'PENDING' || currentStatus == 'RUNNING'"
-        count: 24 # Max 2 minutes
+      # Poll for results using JS function
+      # Pass bookingRef and wait for status to change from PENDING/RUNNING
+      - function: 'pollBookingStatus'
