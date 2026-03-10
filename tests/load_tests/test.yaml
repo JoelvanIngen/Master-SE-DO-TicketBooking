@@ -17,15 +17,16 @@ config:
       Content-Type: 'application/json'
 
 scenarios:
-  flow:
-    - put:
-        url: '/ticket'
-        capture:
-          json: '$.bookingReferenceId'
-          as: 'bookingRef'
-        expect:
-          - statusCode: 202
+  - name: 'Request ticket and poll for completion'
+    flow:
+      - put:
+          url: '/ticket'
+          capture:
+            json: '$.bookingReferenceId'
+            as: 'bookingRef'
+          expect:
+            - statusCode: 202
 
-    # Poll for results using JS function
-    # Pass bookingRef and wait for status to change from PENDING/RUNNING
-    - function: 'pollBookingStatus'
+      # Poll for results using JS function
+      # Pass bookingRef and wait for status to change from PENDING/RUNNING
+      - function: 'pollBookingStatus'
