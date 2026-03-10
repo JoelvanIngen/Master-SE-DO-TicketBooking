@@ -12,6 +12,7 @@
         "ExpressionAttributeNames": { "#status": "status" },
         "ExpressionAttributeValues": { ":status": { "S": "RUNNING" } }
       },
+      "ResultPath": null,
       "Next": "Reserve Seats"
     },
     "Reserve Seats": {
