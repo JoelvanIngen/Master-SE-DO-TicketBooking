@@ -14,7 +14,8 @@ config:
         - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
       maxErrorRate: 5 # Fails if the error rate exceeds 5%
 
-    # Run via: artillery run -e [name] load_test.yaml
+  # Run via: artillery run -e [name] load_test.yaml
+  environments:
     medium_load:
       phases:
         - duration: 60
