@@ -181,6 +181,17 @@ jobs:
       github.event_name == 'workflow_dispatch' && 
       inputs.run_load_tests == true
 
+    strategy:
+      max-parallel: 1
+      fail-fast: true # Set to true if you want to stop the whole suite if one level fails
+      matrix:
+        load_level:
+          - extremely_low_load
+          - low_load
+          - low_medium_load
+          - medium_load
+          - full_load
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -199,32 +210,16 @@ jobs:
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
         run: |
-          # In order
-          TEST_FILES=(
-            "extremely_low_load"
-            "low_load"
-            "low_medium_load"
-            "medium_load"
-            "full_load"
-          )
-
-          mkdir reports
-
-          for STRATEGY in "${TEST_FILES[@]}"; do
-            echo "Starting Load Strategy: $STRATEGY"
-
-            npx artillery run \
-              --output "reports/$STRATEGY.json" \
-              "tests/load_tests/$STRATEGY.yaml"
-
-            echo "Completed $STRATEGY"
-            echo "-------------------------------------------"
-          done
+          mkdir -p reports
+          npx artillery run \
+            -e ${{ matrix.load_level }} \
+            --output "reports/${{ matrix.load_level }}.json" \
+            tests/load_tests/load_test.yaml
 
       - name: Upload Load Test Reports
         uses: actions/upload-artifact@v7
         if: always() # Also if a test fails
         with:
-          name: artillery-load-reports
+          name: artillery-report-${{ matrix.load_level }}
           path: reports/
           retention-days: 7
