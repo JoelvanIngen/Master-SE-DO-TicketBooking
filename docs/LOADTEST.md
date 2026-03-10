@@ -4,7 +4,7 @@ Load testing tracking:
 
 06-03 - Amazon automatically increases concurrent lambda function allowance, can now sustain around 25 requests per second, with less than 5% of requests being rejected for too much traffic. Average response time is
 
-## 06-03 - snapstart changes made, can now sustain around
+## 06-03 - snapstart changes made, can now sustain around 35
 
 ## Summary report @ 13:33:35(+0100)
 

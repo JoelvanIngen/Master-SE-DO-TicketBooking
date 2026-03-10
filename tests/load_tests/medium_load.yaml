@@ -1,14 +1,14 @@
 config:
-  target: "https://vmk2msgnjxyi6qqvw6r5c2zckm0xwxyl.lambda-url.eu-north-1.on.aws"
+  target: 'https://dz8kkiyfhg.execute-api.eu-north-1.amazonaws.com'
   phases:
     - duration: 60
       arrivalRate: 1
       rampTo: 80
-      name: "Ramping up to target load"
+      name: 'Ramping up to target load'
     - duration: 120
       arrivalRate: 80
-      name: "Sustaining 80 requests per second for two minutes"
-  
+      name: 'Sustaining 80 requests per second for two minutes'
+
   plugins:
     ensure:
       thresholds:
@@ -16,7 +16,7 @@ config:
         - http.response_time.p99: 10000 # Fail if 99% of requests take > 10s
 
 scenarios:
-  - name: "Request Tickets"
+  - name: 'Request Tickets'
     flow:
       - put:
-          url: "/ticket"
+          url: '/ticket'

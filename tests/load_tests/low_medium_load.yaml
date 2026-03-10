@@ -1,13 +1,13 @@
 config:
-  target: 'https://dz8kkiyfhg.execute-api.eu-north-1.amazonaws.com/ticket'
+  target: 'https://dz8kkiyfhg.execute-api.eu-north-1.amazonaws.com'
   phases:
     - duration: 60
       arrivalRate: 1
-      rampTo: 30
+      rampTo: 35
       name: 'Ramping up to target load'
     - duration: 120
-      arrivalRate: 30
-      name: 'Sustaining 40 requests per second for two minutes'
+      arrivalRate: 35
+      name: 'Sustaining 35 requests per second for two minutes'
 
   plugins:
     ensure:
