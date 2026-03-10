@@ -78,6 +78,7 @@ export class TicketBookingStack extends cdk.Stack {
     const stateMachine = new sfn.StateMachine(this, 'BookingStateMachine', {
       definitionBody: sfn.DefinitionBody.fromFile('ticket-booking.asl.json'),
       definitionSubstitutions: {
+        PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
         // Must match ticket-booking.asl.json placeholders
         ReserveSeatsArn: reserveSeats.functionArn,
         // Pin specific version to allow snapstart
