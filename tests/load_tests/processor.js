@@ -2,7 +2,7 @@ module.exports = {
   pollBookingStatus: pollBookingStatus,
 };
 
-async function pollBookingStatus(context, ee, next) {
+async function pollBookingStatus(context, ee) {
   const { bookingRef } = context.vars;
   const url = `${context.vars.$processEnvironment.API_URL}/ticket/${bookingRef}`;
 
@@ -19,7 +19,7 @@ async function pollBookingStatus(context, ee, next) {
 
       if (response.status !== 200) {
         ee.emit('error', `GET returned ${response.status} for ${bookingRef}`);
-        return next();
+        break;
       }
 
       // Check if workflow reached terminal state
@@ -39,13 +39,11 @@ async function pollBookingStatus(context, ee, next) {
       }
     } catch (err) {
       ee.emit('error', `Polling error: ${err.message}`);
-      return next();
+      break;
     }
   }
 
   if (!finished) {
     ee.emit('counter', 'booking_timeout', 1);
   }
-
-  return next(); // Move to the next user/step
 }
