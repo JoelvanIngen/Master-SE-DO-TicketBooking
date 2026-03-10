@@ -21,6 +21,7 @@ export class TicketBookingStack extends cdk.Stack {
     const nodeJsFunctionProps: NodejsFunctionProps = {
       runtime: lambda.Runtime.NODEJS_24_X,
       bundling: { externalModules: ['@aws-sdk/*'] },
+      architecture: lambda.Architecture.ARM_64,
     };
 
     // Fake Services NodeJS Lambdas
@@ -49,6 +50,7 @@ export class TicketBookingStack extends cdk.Stack {
       memorySize: 2048,
       timeout: cdk.Duration.seconds(15),
       snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
+      architecture: lambda.Architecture.ARM_64,
     };
 
     const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
@@ -98,6 +100,7 @@ export class TicketBookingStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: cdk.Duration.seconds(60),
       environment: { STATE_MACHINE_ARN: stateMachine.stateMachineArn },
+      architecture: lambda.Architecture.ARM_64,
     });
 
     // HTTP API
