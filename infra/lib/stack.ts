@@ -3,10 +3,11 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { DynamoEventSource, SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class TicketBookingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -15,6 +16,14 @@ export class TicketBookingStack extends cdk.Stack {
     // SQS Queues
     const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue');
     const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue');
+
+    // DynamoDB table
+    const bookingTable = new dynamodb.Table(this, 'BookingTable', {
+      partitionKey: { name: 'bookingReferenceId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      stream: dynamodb.StreamViewType.NEW_IMAGE,
+    });
 
     // Common NodeJS stuff
     // We do not want all the aws props to be bundled, as they are already present in the lambda environment
@@ -79,10 +88,11 @@ export class TicketBookingStack extends cdk.Stack {
       definitionBody: sfn.DefinitionBody.fromFile('ticket-booking.asl.json'),
       definitionSubstitutions: {
         // Must match ticket-booking.asl.json placeholders
-        ReserveSeatsArn: reserveSeats.functionArn,
+        ReserveSeatsArn: reserveSeats.currentVersion.functionArn,
         // Pin specific version to allow snapstart
         RetrievePaymentArn: retrievePayment.currentVersion.functionArn,
         GenerateTicketArn: generateTicket.currentVersion.functionArn,
+        BookingTableName: bookingTable.tableName,
       },
     });
 
@@ -98,28 +108,50 @@ export class TicketBookingStack extends cdk.Stack {
     const publicEndpoint = new NodejsFunction(this, 'PublicEndpoint', {
       entry: 'public-endpoint-nodejs/src/index.ts',
       runtime: lambda.Runtime.NODEJS_24_X,
-      timeout: cdk.Duration.seconds(60),
+      timeout: cdk.Duration.seconds(15),
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
+      },
+    });
+
+    // Stream trigger for database
+    const streamTrigger = new NodejsFunction(this, 'StreamTrigger', {
+      entry: 'public-endpoint-nodejs/src/streamTrigger.ts',
+      runtime: lambda.Runtime.NODEJS_24_X,
       environment: { STATE_MACHINE_ARN: stateMachine.stateMachineArn },
       architecture: lambda.Architecture.ARM_64,
     });
+    streamTrigger.addEventSource(
+      new DynamoEventSource(bookingTable, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        batchSize: 10,
+        retryAttempts: 10,
+      }),
+    );
 
     // HTTP API
     const httpApi = new apigateway.HttpApi(this, 'TicketApi');
     httpApi.addRoutes({
       path: '/ticket',
       methods: [apigateway.HttpMethod.PUT],
-      integration: new HttpLambdaIntegration('PublicEndpointIntegration', publicEndpoint),
+      integration: new HttpLambdaIntegration('PutTicketIntegration', publicEndpoint),
+    });
+    httpApi.addRoutes({
+      path: '/ticket/{bookingReferenceId}',
+      methods: [apigateway.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('GetTicketIntegration', publicEndpoint),
     });
 
     // IAM Permissions
     paymentRequestQueue.grantSendMessages(retrievePayment);
     paymentResponseQueue.grantSendMessages(paymentService);
     ticketGen.grantInvoke(generateTicket);
-    stateMachine.grantStartExecution(publicEndpoint);
-    stateMachine.grantRead(publicEndpoint);
+    stateMachine.grantStartExecution(streamTrigger);
+    bookingTable.grantReadWriteData(publicEndpoint);
+    bookingTable.grantWriteData(stateMachine);
     stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
 
-    reserveSeats.grantInvoke(stateMachine);
+    reserveSeats.currentVersion.grantInvoke(stateMachine);
     retrievePayment.currentVersion.grantInvoke(stateMachine);
     generateTicket.currentVersion.grantInvoke(stateMachine);
 

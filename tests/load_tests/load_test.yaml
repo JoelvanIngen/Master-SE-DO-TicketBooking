@@ -1,0 +1,68 @@
+config:
+  target: '{{ $processEnvironment.API_URL }}'
+  processor: './processor.js'
+  statsInterval: 10
+
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+  plugins:
+    metrics-by-endpoint: {}
+    ensure:
+      thresholds:
+        - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
+      maxErrorRate: 5 # Fails if the error rate exceeds 5%
+
+  # Run via: artillery run -e [name] load_test.yaml
+  environments:
+    medium_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 80
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 80
+          name: 'Sustaining 80 requests per second for two minutes'
+
+    full_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 160
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 160
+          name: 'Sustaining 160 requests per second for two minutes'
+
+scenarios:
+  - name: 'Request ticket and poll for completion'
+    flow:
+      # Timer
+      - function: 'startWorkflowTimer'
+
+      # Request ticket
+      - put:
+          url: '/ticket'
+          capture:
+            json: '$.bookingReferenceId'
+            as: 'bookingRef'
+          expect:
+            - statusCode: 202
+
+      # Poll for results
+      - loop:
+          - think: 2 # 2000ms wait between attempts
+          - get:
+              url: '/ticket/{{ bookingRef }}'
+              capture:
+                json: '$.status'
+                as: 'bookingStatus'
+              expect:
+                - statusCode: 200
+        count: 30
+        whileTrue: 'shouldKeepPolling'
+
+      # Check final status and emit custom metrics
+      - function: 'recordWorkflowMetrics'

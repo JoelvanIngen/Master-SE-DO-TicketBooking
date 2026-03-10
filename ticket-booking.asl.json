@@ -1,7 +1,20 @@
 {
   "Comment": "Ticket Booking Workflow",
-  "StartAt": "Reserve Seats",
+  "StartAt": "Mark as Running",
   "States": {
+    "Mark as Running": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": { "bookingReferenceId": { "S.$": "$.bookingReferenceId" } },
+        "UpdateExpression": "SET #status = :status",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": { ":status": { "S": "RUNNING" } }
+      },
+      "ResultPath": null,
+      "Next": "Reserve Seats"
+    },
     "Reserve Seats": {
       "Type": "Task",
       "Resource": "${ReserveSeatsArn}",
@@ -14,7 +27,8 @@
       "Catch": [
         {
           "ErrorEquals": ["ErrorSeatsNotAvailable"],
-          "Next": "Booking Cancelled (Seats Not Available)"
+          "ResultPath": "$.errorInfo",
+          "Next": "Save Seats Failure"
         }
       ],
       "Next": "Retrieve Payment"
@@ -38,7 +52,8 @@
       "Catch": [
         {
           "ErrorEquals": ["States.Timeout"],
-          "Next": "Booking Cancelled (Timeout)"
+          "ResultPath": "$.errorInfo",
+          "Next": "Save Timeout"
         }
       ],
       "Next": "Generate Ticket"
@@ -54,28 +69,109 @@
       "Retry": [
         {
           "ErrorEquals": ["States.ALL"],
-          "IntervalSeconds": 15,
-          "MaxAttempts": 4,
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
           "BackoffRate": 2
         }
       ],
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
-          "Next": "Booking Cancelled (Ticket Error)"
+          "ResultPath": "$.errorInfo",
+          "Next": "Save Ticket Error"
         }
       ],
       "ResultSelector": {
         "ticketId.$": "$.ticketId"
       },
       "ResultPath": "$.ticketInfo",
+      "Next": "Save Success"
+    },
+
+    "Save Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": {
+          "bookingReferenceId": { "S.$": "$.bookingReferenceId" }
+        },
+        "UpdateExpression": "SET #status = :status, reservationId = :resId, paymentConfirmationId = :payId, ticketId = :ticketId, success = :success",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": {
+          ":status": { "S": "COMPLETED" },
+          ":resId": { "S.$": "$.reservationInfo.reservationId" },
+          ":payId": { "S.$": "$.paymentInfo.paymentConfirmationId" },
+          ":ticketId": { "S.$": "$.ticketInfo.ticketId" },
+          ":success": { "BOOL": true }
+        }
+      },
+      "ResultPath": null,
       "Next": "Booking Succeeded"
     },
+    "Save Seats Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": {
+          "bookingReferenceId": { "S.$": "$.bookingReferenceId" }
+        },
+        "UpdateExpression": "SET #status = :status, success = :success",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": {
+          ":status": { "S": "FAILED_SEATS_UNAVAILABLE" },
+          ":success": { "BOOL": false }
+        }
+      },
+      "ResultPath": null,
+      "Next": "Booking Cancelled (Seats Not Available)"
+    },
+    "Save Timeout": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": {
+          "bookingReferenceId": { "S.$": "$.bookingReferenceId" }
+        },
+        "UpdateExpression": "SET #status = :status, reservationId = :resId, success = :success",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": {
+          ":status": { "S": "FAILED_PAYMENT_TIMEOUT" },
+          ":resId": { "S.$": "$.reservationInfo.reservationId" },
+          ":success": { "BOOL": false }
+        }
+      },
+      "ResultPath": null,
+      "Next": "Booking Cancelled (Timeout)"
+    },
+    "Save Ticket Error": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${BookingTableName}",
+        "Key": {
+          "bookingReferenceId": { "S.$": "$.bookingReferenceId" }
+        },
+        "UpdateExpression": "SET #status = :status, reservationId = :resId, paymentConfirmationId = :payId, success = :success",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": {
+          ":status": { "S": "FAILED_TICKET_ERROR" },
+          ":resId": { "S.$": "$.reservationInfo.reservationId" },
+          ":payId": { "S.$": "$.paymentInfo.paymentConfirmationId" },
+          ":success": { "BOOL": false }
+        }
+      },
+      "ResultPath": null,
+      "Next": "Booking Cancelled (Ticket Error)"
+    },
+
     "Booking Succeeded": {
       "Type": "Succeed"
     },
     "Booking Cancelled (Seats Not Available)": {
-      "Type": "Succeed"
+      "Type": "Fail"
     },
     "Booking Cancelled (Timeout)": {
       "Type": "Fail",
