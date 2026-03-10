@@ -112,15 +112,14 @@ export class TicketBookingStack extends cdk.Stack {
     });
 
     // IAM Permissions
-    paymentRequestQueue.grantSendMessages(retrievePayment);
     paymentResponseQueue.grantSendMessages(paymentService);
+    paymentRequestQueue.grantSendMessages(stateMachine);
     ticketGen.grantInvoke(generateTicket);
     stateMachine.grantStartExecution(publicEndpoint);
     stateMachine.grantRead(publicEndpoint);
     stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
 
     reserveSeats.grantInvoke(stateMachine);
-    retrievePayment.currentVersion.grantInvoke(stateMachine);
     generateTicket.currentVersion.grantInvoke(stateMachine);
 
     // Output gateway URL so we can use it for e2e testing
