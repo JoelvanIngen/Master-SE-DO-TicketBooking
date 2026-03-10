@@ -7,7 +7,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { DynamoEventSource, SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class TicketBookingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -22,6 +22,7 @@ export class TicketBookingStack extends cdk.Stack {
       partitionKey: { name: 'bookingReferenceId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      stream: dynamodb.StreamViewType.NEW_IMAGE,
     });
 
     // Common NodeJS stuff
@@ -107,10 +108,23 @@ export class TicketBookingStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: cdk.Duration.seconds(15),
       environment: {
-        STATE_MACHINE_ARN: stateMachine.stateMachineArn,
         TABLE_NAME: bookingTable.tableName,
       },
     });
+
+    // Stream trigger for database
+    const streamTrigger = new NodejsFunction(this, 'StreamTrigger', {
+      entry: 'public-endpoint-nodejs/src/streamTrigger.ts',
+      runtime: lambda.Runtime.NODEJS_24_X,
+      environment: { STATE_MACHINE_ARN: stateMachine.stateMachineArn },
+    });
+    streamTrigger.addEventSource(
+      new DynamoEventSource(bookingTable, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        batchSize: 10,
+        retryAttempts: 10,
+      }),
+    );
 
     // HTTP API
     const httpApi = new apigateway.HttpApi(this, 'TicketApi');

@@ -1,14 +1,11 @@
-import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 
-const sfnClient = new SFNClient({});
 const ddbClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 
-const STATE_MACHINE_ARN = process.env.STATE_MACHINE_ARN;
 const TABLE_NAME = process.env.TABLE_NAME;
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
@@ -33,18 +30,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
         }),
       );
 
-      // Start Step Function
-      const workflowInput = {
-        bookingReferenceId,
-        simulateBookingFailure,
-      };
-
-      await sfnClient.send(
-        new StartExecutionCommand({
-          stateMachineArn: STATE_MACHINE_ARN,
-          input: JSON.stringify(workflowInput),
-        }),
-      );
+      // State machine is automatically started by DynamoDB stream, not here
 
       // 3. Return 202 Accepted allowing client to start polling
       return {
