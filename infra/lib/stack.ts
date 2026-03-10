@@ -143,7 +143,7 @@ export class TicketBookingStack extends cdk.Stack {
     paymentRequestQueue.grantSendMessages(retrievePayment);
     paymentResponseQueue.grantSendMessages(paymentService);
     ticketGen.grantInvoke(generateTicket);
-    stateMachine.grantStartExecution(publicEndpoint);
+    stateMachine.grantStartExecution(streamTrigger);
     bookingTable.grantReadWriteData(publicEndpoint);
     bookingTable.grantWriteData(stateMachine);
     stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
