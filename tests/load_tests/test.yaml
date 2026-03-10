@@ -1,0 +1,31 @@
+config:
+  target: '{{ $processEnvironment.API_URL }}'
+  processor: './processor.js'
+  phases:
+    - name: 'Warm up'
+      duration: 60
+      arrivalRate: 5
+    - name: 'Ramp up'
+      duration: 120
+      arrivalRate: 5
+      rampTo: 20
+    - name: 'Sustained load'
+      duration: 300
+      arrivalRate: 20
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  flow:
+    - put:
+        url: '/ticket'
+        capture:
+          json: '$.bookingReferenceId'
+          as: 'bookingRef'
+        expect:
+          - statusCode: 202
+
+    # Poll for results using JS function
+    # Pass bookingRef and wait for status to change from PENDING/RUNNING
+    - function: 'pollBookingStatus'
