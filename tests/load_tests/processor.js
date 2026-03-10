@@ -9,29 +9,34 @@ async function pollBookingStatus(context, ee) {
   const MAX_RETRIES = 15;
   const RETRY_INTERVAL_MS = 2000;
 
+  const startTime = Date.now();
+
   let attempts = 0;
   let finished = false;
+
+  // Wait a bit before first attempt
+  await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL_MS));
 
   while (attempts < MAX_RETRIES && !finished) {
     try {
       const response = await fetch(url);
-      const data = await response.json();
 
       if (response.status !== 200) {
         ee.emit('error', `GET returned ${response.status} for ${bookingRef}`);
         break;
       }
 
+      const data = await response.json();
+
       // Check if workflow reached terminal state
       if (data.status !== 'PENDING' && data.status !== 'RUNNING') {
         finished = true;
 
         // Custom metrics for Artillery reports
-        if (data.status === 'COMPLETED') {
-          ee.emit('counter', 'booking_completed', 1);
-        } else {
-          ee.emit('counter', `booking_${data.status.toLowerCase()}`, 1);
-        }
+        const metricName = `booking_${data.status.toLowerCase()}`;
+        ee.emit('counter', metricName, 1);
+        const duration = Date.now() - startTime;
+        ee.emit('histogram', 'workflow_duration_ms', duration);
       } else {
         attempts++;
         // Wait before next poll

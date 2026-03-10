@@ -1,6 +1,7 @@
 config:
   target: '{{ $processEnvironment.API_URL }}'
   processor: './processor.js'
+  statsInterval: 10
   phases:
     - name: 'Warm up'
       duration: 60
@@ -15,6 +16,9 @@ config:
   defaults:
     headers:
       Content-Type: 'application/json'
+  plugins:
+    # Capture metrics
+    metrics-by-endpoint: {}
 
 scenarios:
   - name: 'Request ticket and poll for completion'
