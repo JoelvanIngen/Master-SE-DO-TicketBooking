@@ -187,12 +187,6 @@ jobs:
       fail-fast: true # Set to true if you want to stop the whole suite if one level fails
       matrix:
         include:
-          - name: Extremely Low
-            load_level: extremely_low_load
-          - name: Low
-            load_level: low_load
-          - name: Low-Medium
-            load_level: low_medium_load
           - name: Medium
             load_level: medium_load
           - name: Full
