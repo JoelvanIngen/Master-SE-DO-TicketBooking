@@ -187,7 +187,7 @@ jobs:
       - name: Run E2E Tests
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
-          WSS_URL: ${{ needs.deploy.outputs.api_url }}
+          WSS_URL: ${{ needs.deploy.outputs.ws_url }}
         run: |
           npx tsx --test tests/e2e/booking.test.ts
 
