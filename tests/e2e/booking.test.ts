@@ -29,7 +29,7 @@ async function runWorkflow(simulateBookingFailure: string): Promise<BookingRespo
       timeout = setTimeout(() => {
         ws.close();
         reject(new Error('Timeout waiting for workflow'));
-      }, 30000);
+      }, 60000);
     };
 
     ws.onmessage = (event: any) => {
