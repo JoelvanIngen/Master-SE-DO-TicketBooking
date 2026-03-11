@@ -80,7 +80,8 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      api_url: ${{ steps.extract-url.outputs.api_url }}
+      api_url: ${{ steps.extract-url-http.outputs.api_url }}
+      ws_url: ${{ steps.extract-url-ws.outputs.ws_url }}
 
     # Disallows dependabot creating PR stacks, but does update production on merge
     if: |
@@ -132,19 +133,34 @@ jobs:
           npx cdk deploy "TicketBookingStack-$STACK_ENV" --require-approval never --outputs-file cdk-outputs.json
 
       - name: Extract API URL
-        id: extract-url
+        id: extract-url-http
         run: |
-          # Retrieve URL from JSON file
+          # Retrieve HTTP URL from JSON file
           STACK_NAME="TicketBookingStack-${{ env.STACK_ENV }}"
-          API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiGatewayUrl" cdk-outputs.json)
+          API_URL=$(jq -r ".[\"$STACK_NAME\"].HttpApiUrl" cdk-outputs.json)
 
           # Stop if URL not found, tests mysteriously fail otherwise
           if [ -z "$API_URL" ]; then
-            echo "Error: Could not find ApiGatewayUrl for stack $STACK_NAME in cdk-outputs.json"
+            echo "Error: Could not find HttpApiUrl for stack $STACK_NAME in cdk-outputs.json"
             exit 1
           fi
 
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Extract WS URL
+        id: extract-url-ws
+        run: |
+          # Retrieve WS URL from JSON file
+          STACK_NAME="TicketBookingStack-${{ env.STACK_ENV }}"
+          API_URL=$(jq -r ".[\"$STACK_NAME\"].WebSocketUrl" cdk-outputs.json)
+
+          # Stop if URL not found, tests mysteriously fail otherwise
+          if [ -z "$API_URL" ]; then
+            echo "Error: Could not find WebSocketUrl for stack $STACK_NAME in cdk-outputs.json"
+            exit 1
+          fi
+
+          echo "ws_url=$API_URL" >> $GITHUB_OUTPUT
 
   e2e-test:
     name: End-to-End Tests
@@ -165,11 +181,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './package-lock.json'
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run E2E Tests
         env:
           API_URL: ${{ needs.deploy.outputs.api_url }}
+          WS_URL: ${{ needs.deploy.outputs.api_url }}
         run: |
-          npm ci
           npx tsx --test tests/e2e/booking.test.ts
 
   load-test:
