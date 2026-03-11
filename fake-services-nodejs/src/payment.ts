@@ -5,7 +5,7 @@ const sqsClient = new SQSClient({});
 const QUEUE_URL = process.env.PAYMENT_RESPONSE_QUEUE_URL;
 
 /**
- * - Receives: taskToken, paymentRequestId as sent by RetrievePaymentHandler.java
+ * - Receives: taskToken, paymentRequestId as sent by State Machine
  * - Generates: paymentConfirmationId
  * - Sends: taskToken, paymentRequestId, paymentConfirmationId as expected by PaymentResponseHandler.java
  */
