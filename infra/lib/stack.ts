@@ -102,7 +102,7 @@ export class TicketBookingStack extends cdk.Stack {
         // Pin specific version to allow snapstart
         GenerateTicketArn: generateTicket.currentVersion.functionArn,
         BookingTableName: bookingTable.tableName,
-        WebSocketCallbackUrl: wsStage.callbackUrl,
+        WebSocketApiEndpoint: `${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com`,
       },
     });
 
@@ -149,7 +149,7 @@ export class TicketBookingStack extends cdk.Stack {
     // Grant Step Functions permission to post messages to the WebSocket
     stateMachine.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['execute-api:ManageConnections'],
+        actions: ['execute-api:ManageConnections', 'execute-api:Invoke'],
         resources: [
           this.formatArn({
             service: 'execute-api',

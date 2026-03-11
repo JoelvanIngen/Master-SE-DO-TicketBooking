@@ -128,11 +128,14 @@
     },
     "Notify Success": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Resource": "arn:aws:states:::apigateway:invoke",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketCallbackUrl}",
-        "ConnectionId.$": "$.connectionId",
-        "Data.$": "States.JsonToString($.wsPayload)"
+        "ApiEndpoint": "${WebSocketApiEndpoint}",
+        "Method": "POST",
+        "Stage": "prod",
+        "Path.$": "States.Format('/@connections/{}', $.connectionId)",
+        "RequestBody.$": "$.wsPayload",
+        "AuthType": "IAM_ROLE"
       },
       "ResultPath": null,
       "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Succeeded" }],
@@ -169,11 +172,14 @@
     },
     "Notify Seats Failure": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Resource": "arn:aws:states:::apigateway:invoke",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketCallbackUrl}",
-        "ConnectionId.$": "$.connectionId",
-        "Data.$": "States.JsonToString($.wsPayload)"
+        "ApiEndpoint": "${WebSocketApiEndpoint}",
+        "Method": "POST",
+        "Stage": "prod",
+        "Path.$": "States.Format('/@connections/{}', $.connectionId)",
+        "RequestBody.$": "$.wsPayload",
+        "AuthType": "IAM_ROLE"
       },
       "ResultPath": null,
       "Catch": [
@@ -214,11 +220,14 @@
     },
     "Notify Timeout": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Resource": "arn:aws:states:::apigateway:invoke",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketCallbackUrl}",
-        "ConnectionId.$": "$.connectionId",
-        "Data.$": "States.JsonToString($.wsPayload)"
+        "ApiEndpoint": "${WebSocketApiEndpoint}",
+        "Method": "POST",
+        "Stage": "prod",
+        "Path.$": "States.Format('/@connections/{}', $.connectionId)",
+        "RequestBody.$": "$.wsPayload",
+        "AuthType": "IAM_ROLE"
       },
       "ResultPath": null,
       "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Cancelled (Timeout)" }],
@@ -259,11 +268,14 @@
     },
     "Notify Ticket Error": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Resource": "arn:aws:states:::apigateway:invoke",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketCallbackUrl}",
-        "ConnectionId.$": "$.connectionId",
-        "Data.$": "States.JsonToString($.wsPayload)"
+        "ApiEndpoint": "${WebSocketApiEndpoint}",
+        "Method": "POST",
+        "Stage": "prod",
+        "Path.$": "States.Format('/@connections/{}', $.connectionId)",
+        "RequestBody.$": "$.wsPayload",
+        "AuthType": "IAM_ROLE"
       },
       "ResultPath": null,
       "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Cancelled (Ticket Error)" }],
