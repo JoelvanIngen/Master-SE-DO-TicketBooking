@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -62,13 +61,6 @@ export class TicketBookingStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
     };
 
-    const retrievePayment = new lambda.Function(this, 'RetrievePaymentHandler', {
-      ...javaFunctionProps,
-      handler: 'io.berndruecker.ticketbooking.handlers.RetrievePaymentHandler',
-      code: lambda.Code.fromAsset(bookingJavaJar),
-      environment: { PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl },
-    });
-
     const generateTicket = new lambda.Function(this, 'GenerateTicketHandler', {
       ...javaFunctionProps,
       handler: 'io.berndruecker.ticketbooking.handlers.GenerateTicketHandler',
@@ -91,19 +83,10 @@ export class TicketBookingStack extends cdk.Stack {
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
         ReserveSeatsArn: reserveSeats.currentVersion.functionArn,
         // Pin specific version to allow snapstart
-        RetrievePaymentArn: retrievePayment.currentVersion.functionArn,
         GenerateTicketArn: generateTicket.currentVersion.functionArn,
         BookingTableName: bookingTable.tableName,
       },
     });
-
-    // For the waitForTaskToken pattern
-    stateMachine.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['lambda:InvokeFunction'],
-        resources: [retrievePayment.currentVersion.functionArn],
-      }),
-    );
 
     // Public Endpoint NodeJS Lambda
     const publicEndpoint = new NodejsFunction(this, 'PublicEndpoint', {
