@@ -130,7 +130,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ApiEndpoint": "${WebSocketCallbackUrl}",
         "ConnectionId.$": "$.connectionId",
         "Data.$": "States.JsonToString($.wsPayload)"
       },
@@ -171,7 +171,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ApiEndpoint": "${WebSocketCallbackUrl}",
         "ConnectionId.$": "$.connectionId",
         "Data.$": "States.JsonToString($.wsPayload)"
       },
@@ -216,7 +216,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ApiEndpoint": "${WebSocketCallbackUrl}",
         "ConnectionId.$": "$.connectionId",
         "Data.$": "States.JsonToString($.wsPayload)"
       },
@@ -261,7 +261,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
       "Parameters": {
-        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ApiEndpoint": "${WebSocketCallbackUrl}",
         "ConnectionId.$": "$.connectionId",
         "Data.$": "States.JsonToString($.wsPayload)"
       },
