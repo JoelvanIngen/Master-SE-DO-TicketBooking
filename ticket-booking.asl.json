@@ -1,18 +1,33 @@
 {
   "Comment": "Ticket Booking Workflow",
-  "StartAt": "Mark as Running",
+  "StartAt": "Initialize",
   "States": {
+    "Initialize": {
+      "Type": "Pass",
+      "Comment": "Flatten the input from API Gateway mapping",
+      "Parameters": {
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "connectionId.$": "$.connectionId",
+        "simulateBookingFailure.$": "$.body.simulateBookingFailure"
+      },
+      "Next": "Mark as Running"
+    },
     "Mark as Running": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
         "TableName": "${BookingTableName}",
-        "Key": { "bookingReferenceId": { "S.$": "$.bookingReferenceId" } },
-        "UpdateExpression": "SET #status = :status, simulateBookingFailure = :sbf",
-        "ExpressionAttributeNames": { "#status": "status" },
+        "Key": {
+          "bookingReferenceId": { "S.$": "$.bookingReferenceId" }
+        },
+        "UpdateExpression": "SET #status = :status, simulateBookingFailure = :sbf, connectionId = :connId",
+        "ExpressionAttributeNames": {
+          "#status": "status"
+        },
         "ExpressionAttributeValues": {
           ":status": { "S": "RUNNING" },
-          ":sbf": { "S.$": "$.simulateBookingFailure" }
+          ":sbf": { "S.$": "$.simulateBookingFailure" },
+          ":connId": { "S.$": "$.connectionId" }
         }
       },
       "ResultPath": null,
