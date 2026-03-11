@@ -8,9 +8,12 @@
       "Parameters": {
         "TableName": "${BookingTableName}",
         "Key": { "bookingReferenceId": { "S.$": "$.bookingReferenceId" } },
-        "UpdateExpression": "SET #status = :status",
+        "UpdateExpression": "SET #status = :status, simulateBookingFailure = :sbf",
         "ExpressionAttributeNames": { "#status": "status" },
-        "ExpressionAttributeValues": { ":status": { "S": "RUNNING" } }
+        "ExpressionAttributeValues": {
+          ":status": { "S": "RUNNING" },
+          ":sbf": { "S.$": "$.simulateBookingFailure" }
+        }
       },
       "ResultPath": null,
       "Next": "Reserve Seats"
@@ -108,8 +111,34 @@
         }
       },
       "ResultPath": null,
+      "Next": "Format Success Payload"
+    },
+    "Format Success Payload": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "COMPLETED",
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "ticketId.$": "$.ticketInfo.ticketId",
+        "reservationId.$": "$.reservationInfo.reservationId",
+        "paymentConfirmationId.$": "$.paymentInfo.paymentConfirmationId",
+        "success": true
+      },
+      "ResultPath": "$.wsPayload",
+      "Next": "Notify Success"
+    },
+    "Notify Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Parameters": {
+        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ConnectionId.$": "$.connectionId",
+        "Data.$": "States.JsonToString($.wsPayload)"
+      },
+      "ResultPath": null,
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Succeeded" }],
       "Next": "Booking Succeeded"
     },
+
     "Save Seats Failure": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
@@ -126,8 +155,33 @@
         }
       },
       "ResultPath": null,
+      "Next": "Format Seats Failure Payload"
+    },
+    "Format Seats Failure Payload": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "FAILED_SEATS_UNAVAILABLE",
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "success": false
+      },
+      "ResultPath": "$.wsPayload",
+      "Next": "Notify Seats Failure"
+    },
+    "Notify Seats Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Parameters": {
+        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ConnectionId.$": "$.connectionId",
+        "Data.$": "States.JsonToString($.wsPayload)"
+      },
+      "ResultPath": null,
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "Next": "Booking Cancelled (Seats Not Available)" }
+      ],
       "Next": "Booking Cancelled (Seats Not Available)"
     },
+
     "Save Timeout": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
@@ -145,8 +199,32 @@
         }
       },
       "ResultPath": null,
+      "Next": "Format Timeout Payload"
+    },
+    "Format Timeout Payload": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "FAILED_PAYMENT_TIMEOUT",
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "reservationId.$": "$.reservationInfo.reservationId",
+        "success": false
+      },
+      "ResultPath": "$.wsPayload",
+      "Next": "Notify Timeout"
+    },
+    "Notify Timeout": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Parameters": {
+        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ConnectionId.$": "$.connectionId",
+        "Data.$": "States.JsonToString($.wsPayload)"
+      },
+      "ResultPath": null,
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Cancelled (Timeout)" }],
       "Next": "Booking Cancelled (Timeout)"
     },
+
     "Save Ticket Error": {
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:updateItem",
@@ -165,24 +243,36 @@
         }
       },
       "ResultPath": null,
+      "Next": "Format Ticket Error Payload"
+    },
+    "Format Ticket Error Payload": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "FAILED_TICKET_ERROR",
+        "bookingReferenceId.$": "$.bookingReferenceId",
+        "reservationId.$": "$.reservationInfo.reservationId",
+        "paymentConfirmationId.$": "$.paymentInfo.paymentConfirmationId",
+        "success": false
+      },
+      "ResultPath": "$.wsPayload",
+      "Next": "Notify Ticket Error"
+    },
+    "Notify Ticket Error": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:apigatewaymanagementapi:postToConnection",
+      "Parameters": {
+        "ApiEndpoint": "${WebSocketEndpoint}",
+        "ConnectionId.$": "$.connectionId",
+        "Data.$": "States.JsonToString($.wsPayload)"
+      },
+      "ResultPath": null,
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "Booking Cancelled (Ticket Error)" }],
       "Next": "Booking Cancelled (Ticket Error)"
     },
 
-    "Booking Succeeded": {
-      "Type": "Succeed"
-    },
-    "Booking Cancelled (Seats Not Available)": {
-      "Type": "Fail"
-    },
-    "Booking Cancelled (Timeout)": {
-      "Type": "Fail",
-      "Error": "PaymentTimeout",
-      "Cause": "Payment not received within 30 seconds"
-    },
-    "Booking Cancelled (Ticket Error)": {
-      "Type": "Fail",
-      "Error": "TicketGenerationFailed",
-      "Cause": "The ticket service is unavailable"
-    }
+    "Booking Succeeded": { "Type": "Succeed" },
+    "Booking Cancelled (Seats Not Available)": { "Type": "Fail" },
+    "Booking Cancelled (Timeout)": { "Type": "Fail", "Error": "PaymentTimeout" },
+    "Booking Cancelled (Ticket Error)": { "Type": "Fail", "Error": "TicketGenerationFailed" }
   }
 }
