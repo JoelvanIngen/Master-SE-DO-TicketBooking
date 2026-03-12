@@ -14,7 +14,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- Dependency versions -->
-		<aws.sdk.version>2.42.10</aws.sdk.version>
+		<aws.sdk.version>2.42.11</aws.sdk.version>
 		<aws.lambda.java.core.version>1.4.0</aws.lambda.java.core.version>
 		<aws.lambda.java.events.version>3.16.1</aws.lambda.java.events.version>
 		<jackson.version>2.21.0</jackson.version>
