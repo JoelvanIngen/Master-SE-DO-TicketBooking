@@ -1,0 +1,17 @@
+{
+  "name": "booking-service",
+  "version": "1.0.0",
+  "description": "Internal Booking Logic",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
+    "package": "npm run build && cd dist && zip function.zip index.js",
+    "test": "echo \"No tests specified yet\"",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.1007.0",
+    "@aws-sdk/lib-dynamodb": "^3.1006.0",
+    "@types/aws-lambda": "^8.10.0"
+  }
+}

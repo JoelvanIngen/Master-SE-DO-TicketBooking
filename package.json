@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
+    "booking-service",
     "fake-services-nodejs",
     "public-endpoint-nodejs",
     "infra"
