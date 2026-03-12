@@ -11,6 +11,8 @@ import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-node
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { WebSocketApi, WebSocketStage } from 'aws-cdk-lib/aws-apigatewayv2';
+import { createDashboard, MonitoringResources } from './monitoring/dashboard';
+import { createAlarms } from './monitoring/alarms';
 
 export class TicketBookingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -163,6 +165,24 @@ export class TicketBookingStack extends cdk.Stack {
     bookingInitiator.addToRolePolicy(manageConnectionsPolicy);
     paymentResponseHandler.addToRolePolicy(manageConnectionsPolicy);
     timeoutHandler.addToRolePolicy(manageConnectionsPolicy);
+
+    const monitoringResources: MonitoringResources = {
+      httpApi,
+      publicEndpoint,
+      bookingInitiator,
+      paymentResponseHandler,
+      timeoutHandler,
+      reserveSeats,
+      ticketGen,
+      paymentService,
+      paymentRequestQueue,
+      paymentResponseQueue,
+      timeoutQueue,
+      bookingTable,
+    };
+
+    createDashboard(this, monitoringResources);
+    createAlarms(this, monitoringResources /*, 'dertje.roggeveen@student.uva.nl' */);
 
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
