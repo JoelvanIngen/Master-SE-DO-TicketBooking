@@ -32,14 +32,6 @@ export const handler = async (event: any) => {
     }),
   );
 
-  // Request Payment (async)
-  await sqs.send(
-    new SendMessageCommand({
-      QueueUrl: process.env.PAYMENT_REQUEST_QUEUE_URL,
-      MessageBody: JSON.stringify({ bookingReferenceId }),
-    }),
-  );
-
   // Schedule 60-Second Timeout Fallback
   await sqs.send(
     new SendMessageCommand({
