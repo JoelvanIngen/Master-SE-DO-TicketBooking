@@ -93,7 +93,7 @@ export class TicketBookingStack extends cdk.Stack {
     paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
 
     const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
-      entry: 'internal-service-nodejs/src/timeoutHandler.ts',
+      entry: 'booking-service/src/timeoutHandler.ts',
       ...nodeJsFunctionProps,
       environment: {
         TABLE_NAME: bookingTable.tableName,
