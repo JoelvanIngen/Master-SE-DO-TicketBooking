@@ -13,8 +13,10 @@ const apiConfig = { endpoint: process.env.WS_API_ENDPOINT };
 export const handler = async (event: any) => {
   for (const record of event.Records) {
     const { bookingReferenceId, paymentConfirmationId } = JSON.parse(record.body);
+    console.log(`Received Booking Reference ID: ${bookingReferenceId}`);
 
     // Check if task is still RUNNING
+    console.log('Loading DB entry');
     const { Item } = await ddb.send(
       new GetCommand({
         TableName: process.env.TABLE_NAME,
@@ -29,6 +31,7 @@ export const handler = async (event: any) => {
     let ticketId: string | undefined;
 
     // Call the Ticket Gen Service (sync)
+    console.log('Calling ticket gen service');
     const ticketResponse = await lambda.send(
       new InvokeCommand({
         FunctionName: process.env.TICKET_GEN_FN,
@@ -40,6 +43,7 @@ export const handler = async (event: any) => {
     );
 
     if (ticketResponse.FunctionError) {
+      console.warn('Ticket gen service failed');
       status = 'FAILED_TICKET_ERROR';
       success = false;
     } else {
@@ -48,6 +52,7 @@ export const handler = async (event: any) => {
     }
 
     // Save Final State
+    console.log('Storing DB entry');
     const finalPayload = {
       bookingReferenceId,
       status,
@@ -65,6 +70,7 @@ export const handler = async (event: any) => {
     );
 
     // Notify WS
+    console.log('Sending result to WS');
     const apiClient = new ApiGatewayManagementApiClient(apiConfig);
     try {
       await apiClient.send(
@@ -73,8 +79,13 @@ export const handler = async (event: any) => {
           Data: JSON.stringify(finalPayload),
         }),
       );
-    } catch {
+    } catch (err: any) {
       console.warn(`WS Disconnected: ${Item.connectionId}`);
+      console.error(`Full error for record ${record.messageId}:`, {
+        errorMessage: err.message,
+        errorStack: err.stack,
+        recordBody: record.body,
+      });
     }
   }
 };
