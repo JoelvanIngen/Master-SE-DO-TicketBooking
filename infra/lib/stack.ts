@@ -93,6 +93,8 @@ export class TicketBookingStack extends cdk.Stack {
     const streamRouter = new NodejsFunction(this, 'StreamRouter', {
       entry: 'booking-service/src/streamRouter.ts',
       ...nodeJsFunctionProps,
+      timeout: cdk.Duration.seconds(30), // Because of large batches
+      memorySize: 512, // More compute for large batches
       environment: {
         SEAT_RESERVATION_REQUEST_QUEUE_URL: seatReservationRequestQueue.queueUrl,
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
