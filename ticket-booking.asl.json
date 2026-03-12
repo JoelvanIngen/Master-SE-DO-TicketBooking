@@ -77,6 +77,17 @@
       ],
       "Next": "Generate Ticket"
     },
+    "Generate Ticket Simulated Failure": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.simulateBookingFailure",
+          "StringEquals": "ticket",
+          "Next": "Save Ticket Error"
+        }
+      ],
+      "Default": "Generate Ticket"
+    },
     "Generate Ticket": {
       "Type": "Task",
       "Resource": "${GenerateTicketArn}",
