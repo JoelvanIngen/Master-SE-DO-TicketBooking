@@ -90,7 +90,7 @@
     },
     "Generate Ticket": {
       "Type": "Task",
-      "Resource": "${GenerateTicketArn}",
+      "Resource": "${TicketGenArn}",
       "Parameters": {
         "simulateBookingFailure.$": "$.simulateBookingFailure",
         "bookingReferenceId.$": "$.bookingReferenceId",

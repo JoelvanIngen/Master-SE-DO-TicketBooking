@@ -99,8 +99,7 @@ export class TicketBookingStack extends cdk.Stack {
         // Must match ticket-booking.asl.json placeholders
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
         ReserveSeatsArn: reserveSeats.currentVersion.functionArn,
-        // Pin specific version to allow snapstart
-        GenerateTicketArn: generateTicket.currentVersion.functionArn,
+        TicketGenArn: ticketGen.functionArn,
         BookingTableName: bookingTable.tableName,
         WebSocketApiEndpoint: `${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com`,
       },
@@ -180,12 +179,11 @@ export class TicketBookingStack extends cdk.Stack {
     // IAM Permissions
     paymentResponseQueue.grantSendMessages(paymentService);
     paymentRequestQueue.grantSendMessages(stateMachine);
-    ticketGen.grantInvoke(generateTicket);
+    ticketGen.grantInvoke(stateMachine);
     bookingTable.grantReadData(publicEndpoint);
     bookingTable.grantWriteData(stateMachine);
     stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
     reserveSeats.grantInvoke(stateMachine);
-    generateTicket.currentVersion.grantInvoke(stateMachine);
 
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
