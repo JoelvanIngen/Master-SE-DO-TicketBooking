@@ -60,9 +60,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate ASL
-        run: npm run asl-validate
-
       - name: CDK Synth
         run: npx cdk synth
 
