@@ -10,13 +10,22 @@ export interface MonitoringResources {
   httpApi: apigatewayv2.HttpApi;
   publicEndpoint: lambda.IFunction;
   bookingInitiator: lambda.IFunction;
+  streamRouter: lambda.IFunction;
+  seatReservationResponseHandler: lambda.IFunction;
   paymentResponseHandler: lambda.IFunction;
+  ticketGenerationResultHandler: lambda.IFunction;
   timeoutHandler: lambda.IFunction;
+  notificationHandler: lambda.IFunction;
   reserveSeats: lambda.IFunction;
   ticketGen: lambda.IFunction;
   paymentService: lambda.IFunction;
+  seatReservationRequestQueue: sqs.IQueue;
+  seatReservationResponseQueue: sqs.IQueue;
   paymentRequestQueue: sqs.IQueue;
   paymentResponseQueue: sqs.IQueue;
+  ticketGenRequestQueue: sqs.IQueue;
+  ticketGenResponseQueue: sqs.IQueue;
+  notificationQueue: sqs.IQueue;
   timeoutQueue: sqs.IQueue;
   bookingTable: dynamodb.ITable;
 }
@@ -49,16 +58,42 @@ export function createDashboard(
     label: 'BookingInitiator',
   });
 
+  const streamRouterInvocations = resources.streamRouter.metricInvocations({
+    statistic: 'Sum',
+    period: cdk.Duration.minutes(1),
+    label: 'streamRouter',
+  });
+
+  const seatReservationResponseHandlerInvocations =
+    resources.seatReservationResponseHandler.metricInvocations({
+      statistic: 'Sum',
+      period: cdk.Duration.minutes(1),
+      label: 'seatReservationResponseHandler',
+    });
+
   const paymentResponseInvocations = resources.paymentResponseHandler.metricInvocations({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
     label: 'PaymentResponseHandler',
   });
 
+  const ticketGenerationResultHandlerInvocations =
+    resources.ticketGenerationResultHandler.metricInvocations({
+      statistic: 'Sum',
+      period: cdk.Duration.minutes(1),
+      label: 'ticketGenerationResultHandler',
+    });
+
   const timeoutInvocations = resources.timeoutHandler.metricInvocations({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
     label: 'TimeoutHandler',
+  });
+
+  const notificationHandlerInvocations = resources.notificationHandler.metricInvocations({
+    statistic: 'Sum',
+    period: cdk.Duration.minutes(1),
+    label: 'notificationHandler',
   });
 
   const publicEndpointInvocations = resources.publicEndpoint.metricInvocations({
@@ -92,16 +127,41 @@ export function createDashboard(
     label: 'BookingInitiator Errors',
   });
 
+  const streamRouterErrors = resources.streamRouter.metricErrors({
+    statistic: 'Sum',
+    period: cdk.Duration.minutes(1),
+    label: 'streamRouter Errors',
+  });
+
+  const seatReservationResponseHandlerErrors =
+    resources.seatReservationResponseHandler.metricErrors({
+      statistic: 'Sum',
+      period: cdk.Duration.minutes(1),
+      label: 'seatReservationResponseHandler Errors',
+    });
+
   const paymentResponseErrors = resources.paymentResponseHandler.metricErrors({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
     label: 'PaymentResponseHandler Errors',
   });
 
+  const ticketGenerationResultHandlerErrors = resources.ticketGenerationResultHandler.metricErrors({
+    statistic: 'Sum',
+    period: cdk.Duration.minutes(1),
+    label: 'ticketGenerationResultHandler Errors',
+  });
+
   const timeoutErrors = resources.timeoutHandler.metricErrors({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
     label: 'TimeoutHandler Errors',
+  });
+
+  const notificationHandlerErrors = resources.notificationHandler.metricErrors({
+    statistic: 'Sum',
+    period: cdk.Duration.minutes(1),
+    label: 'notificationHandler Errors',
   });
 
   const publicEndpointErrors = resources.publicEndpoint.metricErrors({
@@ -135,16 +195,42 @@ export function createDashboard(
     label: 'BookingInitiator Duration',
   });
 
+  const streamRouterDuration = resources.streamRouter.metricDuration({
+    statistic: 'Average',
+    period: cdk.Duration.minutes(1),
+    label: 'streamRouter Duration',
+  });
+
+  const seatReservationResponseHandlerDuration =
+    resources.seatReservationResponseHandler.metricDuration({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'seatReservationResponseHandler Duration',
+    });
+
   const paymentResponseDuration = resources.paymentResponseHandler.metricDuration({
     statistic: 'Average',
     period: cdk.Duration.minutes(1),
     label: 'PaymentResponseHandler Duration',
   });
 
+  const ticketGenerationResultHandlerDuration =
+    resources.ticketGenerationResultHandler.metricDuration({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'ticketGenerationResultHandler Duration',
+    });
+
   const timeoutDuration = resources.timeoutHandler.metricDuration({
     statistic: 'Average',
     period: cdk.Duration.minutes(1),
     label: 'TimeoutHandler Duration',
+  });
+
+  const notificationHandlerDuration = resources.notificationHandler.metricDuration({
+    statistic: 'Average',
+    period: cdk.Duration.minutes(1),
+    label: 'notificationHandler Duration',
   });
 
   const publicEndpointDuration = resources.publicEndpoint.metricDuration({
@@ -158,18 +244,26 @@ export function createDashboard(
     label: 'Lambda Error Rate (%)',
     period: cdk.Duration.minutes(1),
     expression:
-      'IF((biInv + prInv + toInv + peInv + rsInv + psInv + tgInv) > 0, 100 * (biErr + prErr + toErr + peErr + rsErr + psErr + tgErr) / (biInv + prInv + toInv + peInv + rsInv + psInv + tgInv), 0)',
+      'IF((biInv + srInv + srrhInv + prInv + tgrhInv + toInv + nhInv + peInv + rsInv + psInv + tgInv) > 0, 100 * (biErr + srErr + srrhErr + prErr + tgrhErr + toErr + nhErr + peErr + rsErr + psErr + tgErr) / (biInv + srInv + srrhInv + prInv + tgrhInv + toInv + nhInv + peInv + rsInv + psInv + tgInv), 0)',
     usingMetrics: {
       biInv: bookingInitiatorInvocations,
+      srInv: streamRouterInvocations,
+      srrhInv: seatReservationResponseHandlerInvocations,
       prInv: paymentResponseInvocations,
+      tgrhInv: ticketGenerationResultHandlerInvocations,
       toInv: timeoutInvocations,
+      nhInv: notificationHandlerInvocations,
       peInv: publicEndpointInvocations,
       rsInv: reserveSeatsInvocations,
       psInv: paymentServiceInvocations,
       tgInv: ticketGenInvocations,
       biErr: bookingInitiatorErrors,
+      srErr: streamRouterErrors,
+      srrhErr: seatReservationResponseHandlerErrors,
       prErr: paymentResponseErrors,
+      tgrhErr: ticketGenerationResultHandlerErrors,
       toErr: timeoutErrors,
+      nhErr: notificationHandlerErrors,
       peErr: publicEndpointErrors,
       rsErr: reserveSeatsErrors,
       psErr: paymentServiceErrors,
@@ -178,17 +272,40 @@ export function createDashboard(
   });
 
   // --- Queue metrics ---
-  const paymentRequestQueueDepth = resources.paymentRequestQueue.metricApproximateNumberOfMessagesVisible({
-    statistic: 'Average',
-    period: cdk.Duration.minutes(1),
-    label: 'PaymentRequestQueue',
-  });
+  const paymentRequestQueueDepth =
+    resources.paymentRequestQueue.metricApproximateNumberOfMessagesVisible({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'PaymentRequestQueue',
+    });
 
-  const paymentResponseQueueDepth = resources.paymentResponseQueue.metricApproximateNumberOfMessagesVisible({
-    statistic: 'Average',
-    period: cdk.Duration.minutes(1),
-    label: 'PaymentResponseQueue',
-  });
+  const paymentResponseQueueDepth =
+    resources.paymentResponseQueue.metricApproximateNumberOfMessagesVisible({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'PaymentResponseQueue',
+    });
+
+  const ticketGenRequestQueueDepth =
+    resources.ticketGenRequestQueue.metricApproximateNumberOfMessagesVisible({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'ticketGenRequestQueue',
+    });
+
+  const ticketGenResponseQueueDepth =
+    resources.ticketGenResponseQueue.metricApproximateNumberOfMessagesVisible({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'ticketGenResponseQueue',
+    });
+
+  const notificationQueueDepth =
+    resources.notificationQueue.metricApproximateNumberOfMessagesVisible({
+      statistic: 'Average',
+      period: cdk.Duration.minutes(1),
+      label: 'notificationQueue',
+    });
 
   const timeoutQueueDepth = resources.timeoutQueue.metricApproximateNumberOfMessagesVisible({
     statistic: 'Average',
@@ -203,17 +320,53 @@ export function createDashboard(
     label: 'BookingInitiator Concurrent',
   });
 
-  const paymentResponseConcurrent = resources.paymentResponseHandler.metric('ConcurrentExecutions', {
+  const streamRouterConcurrent = resources.streamRouter.metric('ConcurrentExecutions', {
     statistic: 'Maximum',
     period: cdk.Duration.minutes(1),
-    label: 'PaymentResponseHandler Concurrent',
+    label: 'streamRouter Concurrent',
   });
+
+  const seatReservationResponseHandlerConcurrent = resources.seatReservationResponseHandler.metric(
+    'ConcurrentExecutions',
+    {
+      statistic: 'Maximum',
+      period: cdk.Duration.minutes(1),
+      label: 'seatReservationResponseHandler Concurrent',
+    },
+  );
+
+  const paymentResponseConcurrent = resources.paymentResponseHandler.metric(
+    'ConcurrentExecutions',
+    {
+      statistic: 'Maximum',
+      period: cdk.Duration.minutes(1),
+      label: 'PaymentResponseHandler Concurrent',
+    },
+  );
+
+  const ticketGenerationResultHandlerConcurrent = resources.ticketGenerationResultHandler.metric(
+    'ConcurrentExecutions',
+    {
+      statistic: 'Maximum',
+      period: cdk.Duration.minutes(1),
+      label: 'ticketGenerationResultHandler Concurrent',
+    },
+  );
 
   const timeoutConcurrent = resources.timeoutHandler.metric('ConcurrentExecutions', {
     statistic: 'Maximum',
     period: cdk.Duration.minutes(1),
     label: 'TimeoutHandler Concurrent',
   });
+
+  const notificationHandlerConcurrent = resources.notificationHandler.metric(
+    'ConcurrentExecutions',
+    {
+      statistic: 'Maximum',
+      period: cdk.Duration.minutes(1),
+      label: 'notificationHandler Concurrent',
+    },
+  );
 
   // --- DynamoDB resource usage ---
   const consumedReads = resources.bookingTable.metricConsumedReadCapacityUnits({
@@ -236,7 +389,17 @@ export function createDashboard(
     }),
     new cloudwatch.GraphWidget({
       title: 'Latency',
-      left: [httpLatency, bookingInitiatorDuration, paymentResponseDuration, timeoutDuration, publicEndpointDuration],
+      left: [
+        httpLatency,
+        bookingInitiatorDuration,
+        streamRouterDuration,
+        seatReservationResponseHandlerDuration,
+        paymentResponseDuration,
+        ticketGenerationResultHandlerDuration,
+        timeoutDuration,
+        notificationHandlerDuration,
+        publicEndpointDuration,
+      ],
       width: 12,
     }),
   );
@@ -246,11 +409,15 @@ export function createDashboard(
       title: 'Booking Flow Invocations',
       left: [
         bookingInitiatorInvocations,
+        streamRouterInvocations,
+        seatReservationResponseHandlerInvocations,
         reserveSeatsInvocations,
         paymentServiceInvocations,
         paymentResponseInvocations,
+        ticketGenerationResultHandlerInvocations,
         ticketGenInvocations,
         timeoutInvocations,
+        notificationHandlerInvocations,
         publicEndpointInvocations,
       ],
       width: 12,
@@ -259,8 +426,12 @@ export function createDashboard(
       title: 'Error Count',
       left: [
         bookingInitiatorErrors,
+        streamRouterErrors,
+        seatReservationResponseHandlerErrors,
         paymentResponseErrors,
+        ticketGenerationResultHandlerErrors,
         timeoutErrors,
+        notificationHandlerErrors,
         publicEndpointErrors,
         reserveSeatsErrors,
         paymentServiceErrors,
@@ -278,7 +449,15 @@ export function createDashboard(
     }),
     new cloudwatch.GraphWidget({
       title: 'Concurrent Executions',
-      left: [bookingInitiatorConcurrent, paymentResponseConcurrent, timeoutConcurrent],
+      left: [
+        bookingInitiatorConcurrent,
+        streamRouterConcurrent,
+        seatReservationResponseHandlerConcurrent,
+        paymentResponseConcurrent,
+        ticketGenerationResultHandlerConcurrent,
+        timeoutConcurrent,
+        notificationHandlerConcurrent,
+      ],
       width: 12,
     }),
   );
@@ -286,7 +465,14 @@ export function createDashboard(
   dashboard.addWidgets(
     new cloudwatch.SingleValueWidget({
       title: 'Queue Depth',
-      metrics: [paymentRequestQueueDepth, paymentResponseQueueDepth, timeoutQueueDepth],
+      metrics: [
+        paymentRequestQueueDepth,
+        paymentResponseQueueDepth,
+        ticketGenRequestQueueDepth,
+        ticketGenResponseQueueDepth,
+        notificationQueueDepth,
+        timeoutQueueDepth,
+      ],
       width: 12,
     }),
     new cloudwatch.GraphWidget({

@@ -44,11 +44,27 @@ export function createAlarms(
           statistic: 'Sum',
           period: cdk.Duration.minutes(1),
         }),
+        srErr: resources.streamRouter.metricErrors({
+          statistic: 'Sum',
+          period: cdk.Duration.minutes(1),
+        }),
+        srrhErr: resources.seatReservationResponseHandler.metricErrors({
+          statistic: 'Sum',
+          period: cdk.Duration.minutes(1),
+        }),
         prErr: resources.paymentResponseHandler.metricErrors({
           statistic: 'Sum',
           period: cdk.Duration.minutes(1),
         }),
+        tgrhErr: resources.ticketGenerationResultHandler.metricErrors({
+          statistic: 'Sum',
+          period: cdk.Duration.minutes(1),
+        }),
         toErr: resources.timeoutHandler.metricErrors({
+          statistic: 'Sum',
+          period: cdk.Duration.minutes(1),
+        }),
+        nhErr: resources.notificationHandler.metricErrors({
           statistic: 'Sum',
           period: cdk.Duration.minutes(1),
         }),
@@ -73,23 +89,135 @@ export function createAlarms(
     alarmDescription: 'At least one Lambda in the booking flow reported an error',
   });
 
-  const paymentRequestQueueBacklogAlarm = new cloudwatch.Alarm(scope, 'PaymentRequestQueueBacklogAlarm', {
-    metric: resources.paymentRequestQueue.metricApproximateNumberOfMessagesVisible({
-      statistic: 'Average',
-      period: cdk.Duration.minutes(1),
-      label: 'PaymentRequestQueue Depth',
-    }),
-    threshold: 5,
-    evaluationPeriods: 1,
-    datapointsToAlarm: 1,
-    comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-    alarmDescription: 'Payment request queue backlog is above 5 messages',
-  });
+  const seatReservationRequestQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'seatReservationRequestQueueBacklogAlarm',
+    {
+      metric: resources.seatReservationRequestQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'seatReservationRequestQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Seat reservation request queue backlog is above 5 messages',
+    },
+  );
+
+  const seatReservationResponseQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'seatReservationResponseQueueBacklogAlarm',
+    {
+      metric: resources.seatReservationResponseQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'seatReservationResponseQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Seat reservation response queue backlog is above 5 messages',
+    },
+  );
+
+  const paymentRequestQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'PaymentRequestQueueBacklogAlarm',
+    {
+      metric: resources.paymentRequestQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'PaymentRequestQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Payment request queue backlog is above 5 messages',
+    },
+  );
+
+  const paymentResponseQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'paymentResponseQueueBacklogAlarm',
+    {
+      metric: resources.paymentResponseQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'paymentResponseQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Payment response queue backlog is above 5 messages',
+    },
+  );
+
+  const ticketGenRequestQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'ticketGenRequestQueueBacklogAlarm',
+    {
+      metric: resources.ticketGenRequestQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'ticketGenRequestQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Ticket gen request queue backlog is above 5 messages',
+    },
+  );
+
+  const ticketGenResponseQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'ticketGenResponseQueueBacklogAlarm',
+    {
+      metric: resources.ticketGenResponseQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'ticketGenResponseQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Ticket gen response queue backlog is above 5 messages',
+    },
+  );
+
+  const notificationQueueBacklogAlarm = new cloudwatch.Alarm(
+    scope,
+    'notificationQueueBacklogAlarm',
+    {
+      metric: resources.notificationQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(1),
+        label: 'notificationQueue Depth',
+      }),
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      alarmDescription: 'Notification queue backlog is above 5 messages',
+    },
+  );
 
   const alarms = [
     bookingInitiatorLatencyAlarm,
     lambdaErrorsAlarm,
+    seatReservationRequestQueueBacklogAlarm,
+    seatReservationResponseQueueBacklogAlarm,
     paymentRequestQueueBacklogAlarm,
+    paymentResponseQueueBacklogAlarm,
+    ticketGenRequestQueueBacklogAlarm,
+    ticketGenResponseQueueBacklogAlarm,
+    notificationQueueBacklogAlarm,
   ];
 
   if (alarmTopic) {

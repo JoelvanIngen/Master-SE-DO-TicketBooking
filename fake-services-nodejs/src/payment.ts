@@ -1,33 +1,22 @@
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { v4 as uuidv4 } from 'uuid';
 
-const sqsClient = new SQSClient({});
-const QUEUE_URL = process.env.PAYMENT_RESPONSE_QUEUE_URL;
+const sqs = new SQSClient({});
 
 /**
- * - Receives: taskToken, paymentRequestId as sent by State Machine
- * - Generates: paymentConfirmationId
- * - Sends: taskToken, paymentRequestId, paymentConfirmationId as expected by PaymentResponseHandler.java
+ * Receives message from SQS to process payment, and sends message back containing confirmation
  */
 export const handler = async (event: any) => {
   for (const record of event.Records) {
-    // Parse incoming message
-    const incomingBody = JSON.parse(record.body);
+    const { bookingReferenceId } = JSON.parse(record.body);
 
-    // Generate ID
-    const paymentConfirmationId = uuidv4();
-
-    // Construct response using incoming data
-    const outgoingPayload = {
-      paymentConfirmationId: paymentConfirmationId,
-      bookingReferenceId: incomingBody.bookingReferenceId,
-    };
-
-    // Send :)
-    await sqsClient.send(
+    await sqs.send(
       new SendMessageCommand({
-        QueueUrl: QUEUE_URL,
-        MessageBody: JSON.stringify(outgoingPayload),
+        QueueUrl: process.env.PAYMENT_RESPONSE_QUEUE_URL,
+        MessageBody: JSON.stringify({
+          bookingReferenceId,
+          paymentConfirmationId: uuidv4(),
+        }),
       }),
     );
   }
