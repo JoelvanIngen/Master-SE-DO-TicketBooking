@@ -70,16 +70,12 @@ export class TicketBookingStack extends cdk.Stack {
     // Java Lambdas
     const bookingJavaJar = 'booking-service-java/target/booking-service-lambda.jar';
 
-    const javaFunctionProps = {
+    const paymentResponseHandler = new lambda.Function(this, 'PaymentResponseHandler', {
       runtime: lambda.Runtime.JAVA_25,
       memorySize: 2048,
       timeout: cdk.Duration.seconds(15),
       snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
       architecture: lambda.Architecture.ARM_64,
-    };
-
-    const paymentResponseHandler = new lambda.Function(this, 'PaymentResponseHandler', {
-      ...javaFunctionProps,
       handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
       code: lambda.Code.fromAsset(bookingJavaJar),
     });
