@@ -4,25 +4,34 @@ import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 /**
- * Receives message from payment service and writes results to DDB
+ * Receives message from ticket service and writes results to DDB
  */
 export const handler = async (event: any) => {
   for (const record of event.Records) {
-    const { bookingReferenceId, paymentConfirmationId } = JSON.parse(record.body);
+    const { bookingReferenceId, success, ticketId } = JSON.parse(record.body);
+    const newStatus = success ? 'COMPLETED' : 'FAILED_TICKET_ERROR';
 
     try {
+      let updateExpr = 'SET #st = :status, success = :success';
+      const attrVals: any = {
+        ':status': newStatus,
+        ':success': success,
+        ':payCompleted': 'PAYMENT_COMPLETED',
+      };
+
+      if (success) {
+        updateExpr += ', ticketId = :tId';
+        attrVals[':tId'] = ticketId;
+      }
+
       await ddb.send(
         new UpdateCommand({
           TableName: process.env.TABLE_NAME,
           Key: { bookingReferenceId },
-          UpdateExpression: 'SET #st = :status, paymentConfirmationId = :payId',
-          ConditionExpression: '#st = :reserved',
+          UpdateExpression: updateExpr,
+          ConditionExpression: '#st = :payCompleted',
           ExpressionAttributeNames: { '#st': 'status' },
-          ExpressionAttributeValues: {
-            ':status': 'PAYMENT_COMPLETED',
-            ':payId': paymentConfirmationId,
-            ':reserved': 'SEATS_RESERVED',
-          },
+          ExpressionAttributeValues: attrVals,
         }),
       );
     } catch (err: any) {

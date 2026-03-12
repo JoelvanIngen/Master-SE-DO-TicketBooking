@@ -8,18 +8,23 @@ import {
   WebSocketLambdaIntegration,
 } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { SqsEventSource, DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { WebSocketApi, WebSocketStage } from 'aws-cdk-lib/aws-apigatewayv2';
+import { StartingPosition } from 'aws-cdk-lib/aws-lambda';
 
 export class TicketBookingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // SQS Queues
-    const seatReservationQueue = new sqs.Queue(this, 'SeatReservationQueue');
+    const seatReservationRequestQueue = new sqs.Queue(this, 'SeatReservationReqQueue');
+    const seatReservationResponseQueue = new sqs.Queue(this, 'SeatReservationResQueue');
     const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue');
     const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue');
+    const ticketGenRequestQueue = new sqs.Queue(this, 'TicketGenReqQueue');
+    const ticketGenResponseQueue = new sqs.Queue(this, 'TicketGenResQueue');
+    const notificationQueue = new sqs.Queue(this, 'NotificationQueue');
     const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue');
 
     // DynamoDB table
@@ -27,6 +32,7 @@ export class TicketBookingStack extends cdk.Stack {
       partitionKey: { name: 'bookingReferenceId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     // WebSocket
@@ -56,11 +62,15 @@ export class TicketBookingStack extends cdk.Stack {
       entry: 'fake-services-nodejs/src/reserveSeats.ts',
       ...nodeJsFunctionProps,
     });
+    reserveSeats.addEventSource(new SqsEventSource(seatReservationRequestQueue));
+    seatReservationResponseQueue.grantSendMessages(reserveSeats);
 
     const ticketGen = new NodejsFunction(this, 'TicketGen', {
       entry: 'fake-services-nodejs/src/ticketGen.ts',
       ...nodeJsFunctionProps,
     });
+    ticketGen.addEventSource(new SqsEventSource(ticketGenRequestQueue));
+    ticketGenResponseQueue.grantSendMessages(ticketGen);
 
     const paymentService = new NodejsFunction(this, 'paymentService', {
       entry: 'fake-services-nodejs/src/payment.ts',
@@ -68,52 +78,90 @@ export class TicketBookingStack extends cdk.Stack {
       environment: { PAYMENT_RESPONSE_QUEUE_URL: paymentResponseQueue.queueUrl },
     });
     paymentService.addEventSource(new SqsEventSource(paymentRequestQueue));
+    paymentResponseQueue.grantSendMessages(paymentService);
 
     // Internal Services
     const bookingInitiator = new NodejsFunction(this, 'BookingInitiator', {
       entry: 'booking-service/src/bookingInitiator.ts',
       ...nodeJsFunctionProps,
-      environment: {
-        TABLE_NAME: bookingTable.tableName,
-        SEAT_RESERVATION_QUEUE_URL: seatReservationQueue.queueUrl,
-        TIMEOUT_QUEUE_URL: timeoutQueue.queueUrl,
-        WS_API_ENDPOINT: wsApiEndpoint,
-        RESERVE_SEATS_FN: reserveSeats.functionName,
-      },
+      environment: { TABLE_NAME: bookingTable.tableName },
     });
+    bookingTable.grantWriteData(bookingInitiator);
 
-    const seatReservationHandler = new NodejsFunction(this, 'SeatReservationHandler', {
-      entry: 'booking-service/src/seatReservationHandler.ts',
+    const streamRouter = new NodejsFunction(this, 'StreamRouter', {
+      entry: 'booking-service/src/streamRouter.ts',
       ...nodeJsFunctionProps,
       environment: {
-        TABLE_NAME: bookingTable.tableName,
+        SEAT_RESERVATION_REQUEST_QUEUE_URL: seatReservationRequestQueue.queueUrl,
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
-        WS_API_ENDPOINT: wsApiEndpoint,
-        RESERVE_SEATS_FN: reserveSeats.functionName,
+        TICKET_GEN_REQUEST_QUEUE_URL: ticketGenRequestQueue.queueUrl,
+        TIMEOUT_QUEUE_URL: timeoutQueue.queueUrl,
+        NOTIFICATION_QUEUE_URL: notificationQueue.queueUrl,
       },
     });
-    seatReservationHandler.addEventSource(new SqsEventSource(seatReservationQueue));
+    streamRouter.addEventSource(
+      new DynamoEventSource(bookingTable, { startingPosition: StartingPosition.LATEST }),
+    );
+    seatReservationRequestQueue.grantSendMessages(streamRouter);
+    paymentRequestQueue.grantSendMessages(streamRouter);
+    ticketGenRequestQueue.grantSendMessages(streamRouter);
+    timeoutQueue.grantSendMessages(streamRouter);
+    notificationQueue.grantSendMessages(streamRouter);
+
+    const seatReservationResponseHandler = new NodejsFunction(
+      this,
+      'seatReservationResponseHandler',
+      {
+        entry: 'booking-service/src/seatReservationResponseHandler.ts',
+        ...nodeJsFunctionProps,
+        environment: { TABLE_NAME: bookingTable.tableName },
+      },
+    );
+    seatReservationResponseHandler.addEventSource(new SqsEventSource(seatReservationResponseQueue));
+    bookingTable.grantWriteData(seatReservationResponseHandler);
 
     const paymentResponseHandler = new NodejsFunction(this, 'PaymentResponseHandler', {
       entry: 'booking-service/src/paymentResponseHandler.ts',
       ...nodeJsFunctionProps,
-      environment: {
-        TABLE_NAME: bookingTable.tableName,
-        WS_API_ENDPOINT: wsApiEndpoint,
-        TICKET_GEN_FN: ticketGen.functionName,
-      },
+      environment: { TABLE_NAME: bookingTable.tableName },
     });
     paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
+    bookingTable.grantWriteData(paymentResponseHandler);
+
+    const ticketGenerationResHandler = new NodejsFunction(this, 'TicketGenResHandler', {
+      entry: 'booking-service/src/ticketGenResponseHandler.ts',
+      ...nodeJsFunctionProps,
+      environment: { TABLE_NAME: bookingTable.tableName },
+    });
+    ticketGenerationResHandler.addEventSource(new SqsEventSource(ticketGenResponseQueue));
+    bookingTable.grantWriteData(ticketGenerationResHandler);
 
     const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
       entry: 'booking-service/src/timeoutHandler.ts',
       ...nodeJsFunctionProps,
-      environment: {
-        TABLE_NAME: bookingTable.tableName,
-        WS_API_ENDPOINT: wsApiEndpoint,
-      },
+      environment: { TABLE_NAME: bookingTable.tableName },
     });
     timeoutHandler.addEventSource(new SqsEventSource(timeoutQueue));
+    bookingTable.grantWriteData(timeoutHandler);
+
+    const notificationHandler = new NodejsFunction(this, 'NotificationHandler', {
+      entry: 'booking-service/src/notificationHandler.ts',
+      ...nodeJsFunctionProps,
+      environment: { WS_API_ENDPOINT: wsApiEndpoint },
+    });
+    notificationHandler.addEventSource(new SqsEventSource(notificationQueue));
+    notificationHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          this.formatArn({
+            service: 'execute-api',
+            resource: webSocketApi.apiId,
+            resourceName: `${wsStage.stageName}/POST/@connections/*`,
+          }),
+        ],
+      }),
+    );
 
     // More WebSocket
     // Tiny Lambda for connects/disconnects
@@ -149,36 +197,6 @@ export class TicketBookingStack extends cdk.Stack {
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('GetTicketIntegration', publicEndpoint),
     });
-
-    // IAM Permissions
-    bookingTable.grantReadWriteData(bookingInitiator);
-    bookingTable.grantReadWriteData(seatReservationHandler);
-    bookingTable.grantReadWriteData(paymentResponseHandler);
-    bookingTable.grantReadWriteData(timeoutHandler);
-    bookingTable.grantReadData(publicEndpoint);
-
-    seatReservationQueue.grantSendMessages(bookingInitiator);
-    paymentRequestQueue.grantSendMessages(seatReservationHandler);
-    timeoutQueue.grantSendMessages(bookingInitiator);
-    paymentResponseQueue.grantSendMessages(paymentService);
-
-    reserveSeats.grantInvoke(seatReservationHandler);
-    ticketGen.grantInvoke(paymentResponseHandler);
-
-    const manageConnectionsPolicy = new iam.PolicyStatement({
-      actions: ['execute-api:ManageConnections'],
-      resources: [
-        this.formatArn({
-          service: 'execute-api',
-          resource: webSocketApi.apiId,
-          resourceName: `${wsStage.stageName}/POST/@connections/*`,
-        }),
-      ],
-    });
-    bookingInitiator.addToRolePolicy(manageConnectionsPolicy);
-    seatReservationHandler.addToRolePolicy(manageConnectionsPolicy);
-    paymentResponseHandler.addToRolePolicy(manageConnectionsPolicy);
-    timeoutHandler.addToRolePolicy(manageConnectionsPolicy);
 
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
