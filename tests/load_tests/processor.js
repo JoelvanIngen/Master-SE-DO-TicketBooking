@@ -1,55 +1,90 @@
 module.exports = {
-  startWorkflowTimer,
-  shouldKeepPolling,
-  recordWorkflowMetrics,
+  runWebSocketWorkflow,
 };
 
 /**
- * Initializes workflow metrics before the HTTP requests begin.
+ * Books a single ticket
  */
-function startWorkflowTimer(context, ee, next) {
-  context.vars.workflowStartTime = Date.now();
-  // Initialize status to ensure loop condition evaluates correctly
-  context.vars.bookingStatus = 'PENDING';
-  return next();
-}
-
-/**
- * Evaluates whether the loop should continue polling.
- * Passed into the `whileTrue` block of the Artillery loop.
- */
-function shouldKeepPolling(context, next) {
-  const status = context.vars.bookingStatus;
-
-  // Continue polling if the job has not reached terminal state
-  const isStillProcessing = status === 'PENDING' || status === 'RUNNING';
-
-  // Artillery whileTrue passes a boolean to `next()`
-  return next(isStillProcessing);
-}
-
-/**
- * Runs after the loop completes to show final metrics.
- */
-function recordWorkflowMetrics(context, ee, next) {
-  const status = context.vars.bookingStatus;
-  const startTime = context.vars.workflowStartTime;
-
-  const isFinished = status !== 'PENDING' && status !== 'RUNNING';
-
-  if (isFinished) {
-    // Custom metrics for Artillery reports
-    const metricName = `booking_${status.toLowerCase()}`;
-    ee.emit('counter', metricName, 1);
-
-    if (startTime) {
-      const duration = Date.now() - startTime;
-      ee.emit('histogram', 'workflow_duration_ms', duration);
-    }
-  } else {
-    // Triggered if the loop reached the max count without finishing
-    ee.emit('counter', 'booking_timeout', 1);
+async function runWebSocketWorkflow(context, ee) {
+  const WS = globalThis.WebSocket;
+  if (!WS) {
+    ee.emit('counter', 'errors.no_ws_available', 1);
+    throw new Error('WS not available');
   }
 
-  return next();
+  const startTime = Date.now();
+  let wssUrl = process.env.WSS_URL;
+  if (!wssUrl) {
+    ee.emit('counter', 'errors.no_wss_url_set', 1);
+    throw new Error('WSS_URL environment variable is not set');
+  }
+
+  wssUrl = wssUrl.replace(/\/$/, '');
+
+  try {
+    await new Promise((resolve) => {
+      const ws = new WS(wssUrl);
+
+      let timeout = setTimeout(() => {
+        ws.close();
+        // Emit Artillery errors for the logs
+        ee.emit('counter', 'booking_timeout', 1);
+        ee.emit('counter', 'errors.timeout', 1);
+        resolve();
+      }, 60000);
+
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify({
+            action: 'bookTicket',
+            simulateBookingFailure: 'none',
+          }),
+        );
+      };
+
+      ws.onmessage = (event) => {
+        const payload = event.data.toString();
+        let data;
+        try {
+          data = JSON.parse(payload);
+        } catch {
+          return; // Ignore noise
+        }
+
+        // Wait specifically for the workflow completion/failure message
+        if (data.status) {
+          clearTimeout(timeout);
+          ws.close();
+
+          const duration = Date.now() - startTime;
+
+          ee.emit('histogram', 'workflow_duration_ms', duration);
+          ee.emit('counter', `booking_${data.status.toLowerCase()}`, 1);
+
+          if (!data.success) {
+            ee.emit('counter', 'errors.booking_failed', 1);
+          }
+
+          resolve();
+        }
+      };
+
+      ws.onerror = () => {
+        ee.emit('counter', 'errors.ws_error', 1);
+        clearTimeout(timeout);
+        ws.close();
+        resolve();
+      };
+
+      ws.onclose = (event) => {
+        if (event.code !== 1000) {
+          ee.emit('counter', `close_code.${event.code}`, 1);
+        }
+        resolve();
+      };
+    });
+  } catch {
+    ee.emit('counter', 'ws_error', 1);
+    ee.emit('counter', 'errors.ws_error', 1);
+  }
 }

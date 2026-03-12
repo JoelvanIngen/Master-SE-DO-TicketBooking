@@ -50,6 +50,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          config: |
+            paths-ignore:
+              - '**/tests/**'
+              - '**/*.test.ts'
 
       - if: matrix.language == 'java'
         name: Set up Java ${{ env.JAVA_VERSION }}

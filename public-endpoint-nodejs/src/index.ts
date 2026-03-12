@@ -1,11 +1,9 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { v4 as uuidv4 } from 'uuid';
 
 const ddbClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(ddbClient);
-
 const TABLE_NAME = process.env.TABLE_NAME;
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
@@ -13,34 +11,6 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const path = event.requestContext.http.path;
 
   try {
-    // PUT: Return 202 Accepted and process in background
-    if (method === 'PUT' && path === '/ticket') {
-      const simulateBookingFailure = event.queryStringParameters?.simulateBookingFailure || 'none';
-      const bookingReferenceId = uuidv4();
-
-      // Save initial status to DDB
-      await docClient.send(
-        new PutCommand({
-          TableName: TABLE_NAME,
-          Item: {
-            bookingReferenceId,
-            status: 'PENDING',
-            simulateBookingFailure,
-          },
-        }),
-      );
-
-      // State machine is automatically started by DynamoDB stream, not here
-
-      // 3. Return 202 Accepted allowing client to start polling
-      return {
-        statusCode: 202,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingReferenceId }),
-      };
-    }
-
-    // GET: Get status and return 200 OK with status
     if (method === 'GET' && path.startsWith('/ticket/')) {
       const bookingReferenceId = event.pathParameters?.bookingReferenceId || path.split('/')[2];
 

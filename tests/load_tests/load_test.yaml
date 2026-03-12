@@ -1,17 +1,13 @@
 config:
-  target: '{{ $processEnvironment.API_URL }}'
+  target: '{{ $processEnvironment.WSS_URL }}'
   processor: './processor.js'
   statsInterval: 10
-
-  defaults:
-    headers:
-      Content-Type: 'application/json'
 
   plugins:
     metrics-by-endpoint: {}
     ensure:
       thresholds:
-        - http.response_time.p99: 30000 # Fail if 99% of requests take > 30s
+        - workflow_duration_ms.p99: 30000
       maxErrorRate: 5 # Fails if the error rate exceeds 5%
 
   # Run via: artillery run -e [name] load_test.yaml
@@ -37,32 +33,6 @@ config:
           name: 'Sustaining 160 requests per second for two minutes'
 
 scenarios:
-  - name: 'Request ticket and poll for completion'
+  - name: 'Book ticket and await completion'
     flow:
-      # Timer
-      - function: 'startWorkflowTimer'
-
-      # Request ticket
-      - put:
-          url: '/ticket'
-          capture:
-            json: '$.bookingReferenceId'
-            as: 'bookingRef'
-          expect:
-            - statusCode: 202
-
-      # Poll for results
-      - loop:
-          - think: 6 # 6000ms wait between attempts
-          - get:
-              url: '/ticket/{{ bookingRef }}'
-              capture:
-                json: '$.status'
-                as: 'bookingStatus'
-              expect:
-                - statusCode: 200
-        count: 10
-        whileTrue: 'shouldKeepPolling'
-
-      # Check final status and emit custom metrics
-      - function: 'recordWorkflowMetrics'
+      - function: 'runWebSocketWorkflow'
