@@ -139,13 +139,13 @@ export class TicketBookingStack extends cdk.Stack {
     paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
     bookingTable.grantWriteData(paymentResponseHandler);
 
-    const ticketGenerationResHandler = new NodejsFunction(this, 'TicketGenResHandler', {
+    const ticketGenerationResultHandler = new NodejsFunction(this, 'TicketGenResHandler', {
       entry: 'booking-service/src/ticketGenResponseHandler.ts',
       ...nodeJsFunctionProps,
       environment: { TABLE_NAME: bookingTable.tableName },
     });
-    ticketGenerationResHandler.addEventSource(new SqsEventSource(ticketGenResponseQueue));
-    bookingTable.grantWriteData(ticketGenerationResHandler);
+    ticketGenerationResultHandler.addEventSource(new SqsEventSource(ticketGenResponseQueue));
+    bookingTable.grantWriteData(ticketGenerationResultHandler);
 
     const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
       entry: 'booking-service/src/timeoutHandler.ts',
@@ -214,13 +214,22 @@ export class TicketBookingStack extends cdk.Stack {
       httpApi,
       publicEndpoint,
       bookingInitiator,
+      streamRouter,
+      seatReservationResponseHandler,
       paymentResponseHandler,
+      ticketGenerationResultHandler,
       timeoutHandler,
+      notificationHandler,
       reserveSeats,
       ticketGen,
       paymentService,
+      seatReservationRequestQueue,
+      seatReservationResponseQueue,
       paymentRequestQueue,
       paymentResponseQueue,
+      ticketGenRequestQueue,
+      ticketGenResponseQueue,
+      notificationQueue,
       timeoutQueue,
       bookingTable,
     };
