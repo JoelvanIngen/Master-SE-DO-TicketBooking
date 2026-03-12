@@ -61,6 +61,7 @@ export class TicketBookingStack extends cdk.Stack {
     const reserveSeats = new NodejsFunction(this, 'ReserveSeats', {
       entry: 'fake-services-nodejs/src/reserveSeats.ts',
       ...nodeJsFunctionProps,
+      environment: { SEAT_RESERVATION_RESPONSE_QUEUE_URL: seatReservationResponseQueue.queueUrl },
     });
     reserveSeats.addEventSource(new SqsEventSource(seatReservationRequestQueue));
     seatReservationResponseQueue.grantSendMessages(reserveSeats);
@@ -68,6 +69,7 @@ export class TicketBookingStack extends cdk.Stack {
     const ticketGen = new NodejsFunction(this, 'TicketGen', {
       entry: 'fake-services-nodejs/src/ticketGen.ts',
       ...nodeJsFunctionProps,
+      environment: { TICKET_GEN_RESPONSE_QUEUE_URL: ticketGenResponseQueue.queueUrl },
     });
     ticketGen.addEventSource(new SqsEventSource(ticketGenRequestQueue));
     ticketGenResponseQueue.grantSendMessages(ticketGen);
@@ -190,6 +192,7 @@ export class TicketBookingStack extends cdk.Stack {
         TABLE_NAME: bookingTable.tableName,
       },
     });
+    bookingTable.grantReadData(publicEndpoint);
 
     const httpApi = new apigatewayv2.HttpApi(this, 'TicketApi');
     httpApi.addRoutes({
