@@ -20,8 +20,7 @@ export const handler = async (event: any) => {
     // Construct response using incoming data
     const outgoingPayload = {
       paymentConfirmationId: paymentConfirmationId,
-      taskToken: incomingBody.taskToken,
-      paymentRequestId: incomingBody.paymentRequestId,
+      bookingReferenceId: incomingBody.bookingReferenceId,
     };
 
     // Send :)

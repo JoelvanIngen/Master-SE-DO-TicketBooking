@@ -1,12 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import {
   HttpLambdaIntegration,
-  WebSocketAwsIntegration,
   WebSocketLambdaIntegration,
 } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -21,6 +19,7 @@ export class TicketBookingStack extends cdk.Stack {
     // SQS Queues
     const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue');
     const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue');
+    const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue');
 
     // DynamoDB table
     const bookingTable = new dynamodb.Table(this, 'BookingTable', {
@@ -40,6 +39,8 @@ export class TicketBookingStack extends cdk.Stack {
       stageName: 'prod',
       autoDeploy: true,
     });
+
+    const wsApiEndpoint = `https://${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com/${wsStage.stageName}`;
 
     // Common NodeJS stuff
     // We do not want all the aws props to be bundled, as they are already present in the lambda environment
@@ -67,32 +68,39 @@ export class TicketBookingStack extends cdk.Stack {
     });
     paymentService.addEventSource(new SqsEventSource(paymentRequestQueue));
 
-    // Java Lambdas
-    const bookingJavaJar = 'booking-service-java/target/booking-service-lambda.jar';
-
-    const paymentResponseHandler = new lambda.Function(this, 'PaymentResponseHandler', {
-      runtime: lambda.Runtime.JAVA_25,
-      memorySize: 2048,
-      timeout: cdk.Duration.seconds(15),
-      snapStart: lambda.SnapStartConf.ON_PUBLISHED_VERSIONS,
-      architecture: lambda.Architecture.ARM_64,
-      handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
-      code: lambda.Code.fromAsset(bookingJavaJar),
-    });
-    paymentResponseHandler.currentVersion.addEventSource(new SqsEventSource(paymentResponseQueue));
-
-    // Step Function Machine
-    const stateMachine = new sfn.StateMachine(this, 'BookingStateMachine', {
-      definitionBody: sfn.DefinitionBody.fromFile('ticket-booking.asl.json'),
-      definitionSubstitutions: {
-        // Must match ticket-booking.asl.json placeholders
+    // Internal Services
+    const bookingInitiator = new NodejsFunction(this, 'BookingInitiator', {
+      entry: 'booking-service/src/bookingInitiator.ts',
+      ...nodeJsFunctionProps,
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
-        ReserveSeatsArn: reserveSeats.currentVersion.functionArn,
-        TicketGenArn: ticketGen.functionArn,
-        BookingTableName: bookingTable.tableName,
-        WebSocketApiEndpoint: `${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com`,
+        TIMEOUT_QUEUE_URL: timeoutQueue.queueUrl,
+        WS_API_ENDPOINT: wsApiEndpoint,
+        RESERVE_SEATS_FN: reserveSeats.functionName,
       },
     });
+
+    const paymentResponseHandler = new NodejsFunction(this, 'PaymentResponseHandler', {
+      entry: 'booking-service/src/paymentResponseHandler.ts',
+      ...nodeJsFunctionProps,
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
+        WS_API_ENDPOINT: wsApiEndpoint,
+        TICKET_GEN_FN: ticketGen.functionName,
+      },
+    });
+    paymentResponseHandler.addEventSource(new SqsEventSource(paymentResponseQueue));
+
+    const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
+      entry: 'booking-service/src/timeoutHandler.ts',
+      ...nodeJsFunctionProps,
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
+        WS_API_ENDPOINT: wsApiEndpoint,
+      },
+    });
+    timeoutHandler.addEventSource(new SqsEventSource(timeoutQueue));
 
     // More WebSocket
     // Tiny Lambda for connects/disconnects
@@ -104,49 +112,13 @@ export class TicketBookingStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
     });
     const wsConnIntegration = new WebSocketLambdaIntegration('WSConnIntegration', wsConnectLambda);
-
     webSocketApi.addRoute('$connect', { integration: wsConnIntegration });
     webSocketApi.addRoute('$disconnect', { integration: wsConnIntegration });
 
-    // Allow WS API to start Step Functions
-    const apiGwSfnRole = new iam.Role(this, 'ApiGwSfnRole', {
-      assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'),
-    });
-    stateMachine.grantStartExecution(apiGwSfnRole);
-
-    const bookTicketIntegration = new WebSocketAwsIntegration('BookTicketIntegration', {
-      integrationUri: `arn:aws:apigateway:${this.region}:states:action/StartExecution`,
-      integrationMethod: apigatewayv2.HttpMethod.POST,
-      credentialsRole: apiGwSfnRole,
-
-      // VTLas a raw string.
-      requestTemplates: {
-        'application/json': `
-{
-  "stateMachineArn": "${stateMachine.stateMachineArn}",
-  "input": "{ \\"bookingReferenceId\\": \\"$context.requestId\\", \\"connectionId\\": \\"$context.connectionId\\", \\"body\\": $util.escapeJavaScript($input.json('$')) }"
-}
-    `,
-      },
-    });
-
+    // WS triggers booking initiator
     webSocketApi.addRoute('bookTicket', {
-      integration: bookTicketIntegration,
+      integration: new WebSocketLambdaIntegration('BookTicketIntegration', bookingInitiator),
     });
-
-    // Grant Step Functions permission to post messages to the WebSocket
-    stateMachine.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['execute-api:ManageConnections', 'execute-api:Invoke'],
-        resources: [
-          this.formatArn({
-            service: 'execute-api',
-            resource: webSocketApi.apiId,
-            resourceName: `${wsStage.stageName}/POST/@connections/*`,
-          }),
-        ],
-      }),
-    );
 
     // HTTP API (for querying with no ws/connection loss)
     const publicEndpoint = new NodejsFunction(this, 'PublicEndpoint', {
@@ -166,13 +138,31 @@ export class TicketBookingStack extends cdk.Stack {
     });
 
     // IAM Permissions
-    paymentResponseQueue.grantSendMessages(paymentService);
-    paymentRequestQueue.grantSendMessages(stateMachine);
-    ticketGen.grantInvoke(stateMachine);
+    bookingTable.grantReadWriteData(bookingInitiator);
+    bookingTable.grantReadWriteData(paymentResponseHandler);
+    bookingTable.grantReadWriteData(timeoutHandler);
     bookingTable.grantReadData(publicEndpoint);
-    bookingTable.grantWriteData(stateMachine);
-    stateMachine.grantTaskResponse(paymentResponseHandler.currentVersion);
-    reserveSeats.grantInvoke(stateMachine);
+
+    paymentRequestQueue.grantSendMessages(bookingInitiator);
+    timeoutQueue.grantSendMessages(bookingInitiator);
+    paymentResponseQueue.grantSendMessages(paymentService);
+
+    reserveSeats.grantInvoke(bookingInitiator);
+    ticketGen.grantInvoke(paymentResponseHandler);
+
+    const manageConnectionsPolicy = new iam.PolicyStatement({
+      actions: ['execute-api:ManageConnections'],
+      resources: [
+        this.formatArn({
+          service: 'execute-api',
+          resource: webSocketApi.apiId,
+          resourceName: `${wsStage.stageName}/POST/@connections/*`,
+        }),
+      ],
+    });
+    bookingInitiator.addToRolePolicy(manageConnectionsPolicy);
+    paymentResponseHandler.addToRolePolicy(manageConnectionsPolicy);
+    timeoutHandler.addToRolePolicy(manageConnectionsPolicy);
 
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
