@@ -102,7 +102,12 @@ export class TicketBookingStack extends cdk.Stack {
       },
     });
     streamRouter.addEventSource(
-      new DynamoEventSource(bookingTable, { startingPosition: StartingPosition.LATEST }),
+      new DynamoEventSource(bookingTable, {
+        startingPosition: StartingPosition.LATEST,
+        batchSize: 100,
+        parallelizationFactor: 10,
+        retryAttempts: 3,
+      }),
     );
     seatReservationRequestQueue.grantSendMessages(streamRouter);
     paymentRequestQueue.grantSendMessages(streamRouter);
