@@ -74,7 +74,7 @@ export const handler = async (event: any) => {
 
     // Notify WS
     console.log('Sending result to WS');
-    const apiClient = new ApiGatewayManagementApiClient(apiConfig);
+    const apiClient = new ApiGatewayManagementApiClient(wsEndpoint);
     try {
       await apiClient.send(
         new PostToConnectionCommand({
