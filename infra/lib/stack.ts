@@ -78,13 +78,6 @@ export class TicketBookingStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
     };
 
-    const generateTicket = new lambda.Function(this, 'GenerateTicketHandler', {
-      ...javaFunctionProps,
-      handler: 'io.berndruecker.ticketbooking.handlers.GenerateTicketHandler',
-      code: lambda.Code.fromAsset(bookingJavaJar),
-      environment: { TICKETGEN_FUNCTION_NAME: ticketGen.functionName },
-    });
-
     const paymentResponseHandler = new lambda.Function(this, 'PaymentResponseHandler', {
       ...javaFunctionProps,
       handler: 'io.berndruecker.ticketbooking.handlers.PaymentResponseHandler',
