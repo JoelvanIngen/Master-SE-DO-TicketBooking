@@ -17,6 +17,7 @@ export class TicketBookingStack extends cdk.Stack {
     super(scope, id, props);
 
     // SQS Queues
+    const seatReservationQueue = new sqs.Queue(this, 'SeatReservationQueue');
     const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue');
     const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue');
     const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue');
@@ -74,12 +75,24 @@ export class TicketBookingStack extends cdk.Stack {
       ...nodeJsFunctionProps,
       environment: {
         TABLE_NAME: bookingTable.tableName,
-        PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
+        SEAT_RESERVATION_QUEUE_URL: seatReservationQueue.queueUrl,
         TIMEOUT_QUEUE_URL: timeoutQueue.queueUrl,
         WS_API_ENDPOINT: wsApiEndpoint,
         RESERVE_SEATS_FN: reserveSeats.functionName,
       },
     });
+
+    const seatReservationHandler = new NodejsFunction(this, 'SeatReservationHandler', {
+      entry: 'booking-service/src/seatReservationHandler.ts',
+      ...nodeJsFunctionProps,
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
+        PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
+        WS_API_ENDPOINT: wsApiEndpoint,
+        RESERVE_SEATS_FN: reserveSeats.functionName,
+      },
+    });
+    seatReservationHandler.addEventSource(new SqsEventSource(seatReservationQueue));
 
     const paymentResponseHandler = new NodejsFunction(this, 'PaymentResponseHandler', {
       entry: 'booking-service/src/paymentResponseHandler.ts',
@@ -139,15 +152,17 @@ export class TicketBookingStack extends cdk.Stack {
 
     // IAM Permissions
     bookingTable.grantReadWriteData(bookingInitiator);
+    bookingTable.grantReadWriteData(seatReservationHandler);
     bookingTable.grantReadWriteData(paymentResponseHandler);
     bookingTable.grantReadWriteData(timeoutHandler);
     bookingTable.grantReadData(publicEndpoint);
 
-    paymentRequestQueue.grantSendMessages(bookingInitiator);
+    seatReservationQueue.grantSendMessages(bookingInitiator);
+    paymentRequestQueue.grantSendMessages(seatReservationHandler);
     timeoutQueue.grantSendMessages(bookingInitiator);
     paymentResponseQueue.grantSendMessages(paymentService);
 
-    reserveSeats.grantInvoke(bookingInitiator);
+    reserveSeats.grantInvoke(seatReservationHandler);
     ticketGen.grantInvoke(paymentResponseHandler);
 
     const manageConnectionsPolicy = new iam.PolicyStatement({
@@ -161,6 +176,7 @@ export class TicketBookingStack extends cdk.Stack {
       ],
     });
     bookingInitiator.addToRolePolicy(manageConnectionsPolicy);
+    seatReservationHandler.addToRolePolicy(manageConnectionsPolicy);
     paymentResponseHandler.addToRolePolicy(manageConnectionsPolicy);
     timeoutHandler.addToRolePolicy(manageConnectionsPolicy);
 

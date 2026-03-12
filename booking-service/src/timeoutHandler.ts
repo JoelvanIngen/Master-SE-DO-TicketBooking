@@ -1,46 +1,42 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import {
-  ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-} from '@aws-sdk/client-apigatewaymanagementapi';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { notifyWs } from './utils';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const apiConfig = { endpoint: process.env.WS_API_ENDPOINT };
 
 export const handler = async (event: any) => {
   for (const record of event.Records) {
-    const { bookingReferenceId, connectionId, reservationId } = JSON.parse(record.body);
+    const { bookingReferenceId, connectionId } = JSON.parse(record.body);
 
-    const { Item } = await ddb.send(
-      new GetCommand({
-        TableName: process.env.TABLE_NAME,
-        Key: { bookingReferenceId },
-      }),
-    );
-
-    // If still ongoing: cancel
-    if (Item && Item.status === 'RUNNING') {
-      const payload = {
-        bookingReferenceId,
-        reservationId,
-        status: 'FAILED_PAYMENT_TIMEOUT',
-        success: false,
-      };
-
+    try {
+      // Only transition to Timeout if it is still PENDING or SEATS_RESERVED
       await ddb.send(
-        new PutCommand({ TableName: process.env.TABLE_NAME, Item: { ...Item, ...payload } }),
+        new UpdateCommand({
+          TableName: process.env.TABLE_NAME,
+          Key: { bookingReferenceId },
+          UpdateExpression: 'SET #st = :failed, success = :suc',
+          ConditionExpression: '#st IN (:pending, :reserved)',
+          ExpressionAttributeNames: { '#st': 'status' },
+          ExpressionAttributeValues: {
+            ':failed': 'FAILED_PAYMENT_TIMEOUT',
+            ':suc': false,
+            ':pending': 'PENDING',
+            ':reserved': 'SEATS_RESERVED',
+          },
+        }),
       );
 
-      const apiClient = new ApiGatewayManagementApiClient(apiConfig);
-      try {
-        await apiClient.send(
-          new PostToConnectionCommand({
-            ConnectionId: connectionId,
-            Data: JSON.stringify(payload),
-          }),
-        );
-      } catch {}
+      await notifyWs(connectionId, {
+        bookingReferenceId,
+        status: 'FAILED_PAYMENT_TIMEOUT',
+        success: false,
+      });
+    } catch (err: any) {
+      // If this fails, that means booking either succeeded or already failed for different reason
+      // Do nothing
+      if (err.name !== 'ConditionalCheckFailedException') {
+        throw err;
+      }
     }
   }
 };
