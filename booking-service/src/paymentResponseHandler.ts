@@ -8,7 +8,10 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
-const apiConfig = { endpoint: process.env.WS_API_ENDPOINT };
+const wsEndpoint = { endpoint: process.env.WS_API_ENDPOINT };
+if (!wsEndpoint) {
+  throw new Error('WS_API_ENDPOINT environment variable is missing');
+}
 
 export const handler = async (event: any) => {
   for (const record of event.Records) {

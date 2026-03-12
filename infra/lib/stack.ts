@@ -40,7 +40,7 @@ export class TicketBookingStack extends cdk.Stack {
       autoDeploy: true,
     });
 
-    const wsApiEndpoint = `${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com`;
+    const wsApiEndpoint = `https://${webSocketApi.apiId}.execute-api.${this.region}.amazonaws.com/${wsStage.stageName}`;
 
     // Common NodeJS stuff
     // We do not want all the aws props to be bundled, as they are already present in the lambda environment
