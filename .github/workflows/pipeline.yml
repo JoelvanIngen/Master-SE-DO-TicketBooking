@@ -226,7 +226,7 @@ jobs:
 
       - name: Run Load Suite ${{ matrix.name }}
         env:
-          API_URL: ${{ needs.deploy.outputs.api_url }}
+          WSS_URL: ${{ needs.deploy.outputs.ws_url }}
         run: |
           mkdir -p reports
           npx artillery run \
