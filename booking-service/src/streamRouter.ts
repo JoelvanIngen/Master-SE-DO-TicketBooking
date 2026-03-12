@@ -11,7 +11,7 @@ export const handler = async (event: any) => {
   await Promise.all(
     event.Records.map(async (record: any) => {
       if (record.eventName !== 'INSERT' && record.eventName !== 'MODIFY') {
-        continue;
+        return;
       }
 
       // Convert JSON to standard JS
@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
       const isInsert = record.eventName === 'INSERT';
       const hasStatusChanged = isInsert || (oldImage && oldImage.status !== newImage.status);
 
-      if (!hasStatusChanged) continue;
+      if (!hasStatusChanged) return;
 
       const { bookingReferenceId, connectionId, simulateBookingFailure, status } = newImage;
 
