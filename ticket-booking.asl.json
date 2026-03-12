@@ -75,9 +75,9 @@
           "Next": "Save Timeout"
         }
       ],
-      "Next": "Generate Ticket"
+      "Next": "Handle Ticket Simulated Failure"
     },
-    "Generate Ticket Simulated Failure": {
+    "Handle Ticket Simulated Failure": {
       "Type": "Choice",
       "Choices": [
         {
