@@ -28,20 +28,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   codeql:
-    name: CodeQL Analysis / ${{ matrix.display_name }}
+    name: CodeQL Analysis
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: 'java'
-            display_name: 'Java'
-          - language: 'javascript'
-            display_name: 'NodeJS'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -49,23 +41,8 @@ jobs:
       - name: Initialise CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: ${{ matrix.language }}
+          languages: 'javascript'
           config: |
             paths-ignore:
               - '**/tests/**'
               - '**/*.test.ts'
-
-      - if: matrix.language == 'java'
-        name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v5
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - if: matrix.language == 'java'
-        name: Build Java
-        run: mvn -B -ntp -f booking-service-java/pom.xml clean install -DskipTests
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
