@@ -75,11 +75,22 @@
           "Next": "Save Timeout"
         }
       ],
-      "Next": "Generate Ticket"
+      "Next": "Handle Ticket Simulated Failure"
+    },
+    "Handle Ticket Simulated Failure": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.simulateBookingFailure",
+          "StringEquals": "ticket",
+          "Next": "Save Ticket Error"
+        }
+      ],
+      "Default": "Generate Ticket"
     },
     "Generate Ticket": {
       "Type": "Task",
-      "Resource": "${GenerateTicketArn}",
+      "Resource": "${TicketGenArn}",
       "Parameters": {
         "simulateBookingFailure.$": "$.simulateBookingFailure",
         "bookingReferenceId.$": "$.bookingReferenceId",
