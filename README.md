@@ -27,6 +27,17 @@ We use **GitHub Actions** to automate the deployment process:
 
 ## Testing
 
+### Example Client
+
+An example client can be deployed by navigating to `/examples` and running
+
+`npx serve .`
+
+In a browser, navigate to `localhost:3000` and open the client.
+From there, follow the instructions on the webpage.
+
+### (OLD) curl
+
 When deployed, a ticket can be generated as follows:
 
 ```
@@ -42,6 +53,8 @@ curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=seats"
 ```
 curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=ticket"
 ```
+
+### Load tests
 
 To simulate various levels of load, the `artillery` package can be used to execute load tests found in `tests/load_tests`:
 
