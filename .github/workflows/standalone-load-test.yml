@@ -1,0 +1,58 @@
+name: Standalone Load Test
+on:
+  workflow_dispatch:
+    inputs:
+      wss_url:
+        description: 'Target WebSocket URL (e.g., wss://...)'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  load-test:
+    name: Load Test ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      max-parallel: 1
+      fail-fast: true # Stops the whole suite if one level fails
+      matrix:
+        include:
+          - name: Medium
+            load_level: medium_load
+          - name: Full
+            load_level: full_load
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Load Suite ${{ matrix.name }}
+        env:
+          WSS_URL: ${{ inputs.wss_url }}
+        run: |
+          mkdir -p reports
+          npx artillery run \
+            -e ${{ matrix.load_level }} \
+            --output "reports/${{ matrix.load_level }}.json" \
+            tests/load_tests/load_test.yaml
+
+      - name: Upload Load Test Reports
+        uses: actions/upload-artifact@v7
+        if: always() # Ensure reports are uploaded even if the test fails
+        with:
+          name: standalone-artillery-report-${{ matrix.load_level }}
+          path: reports/
+          retention-days: 7
