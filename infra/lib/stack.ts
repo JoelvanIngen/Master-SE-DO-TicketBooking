@@ -95,6 +95,7 @@ export class TicketBookingStack extends cdk.Stack {
     });
     bookingTable.grantWriteData(bookingInitiator);
     notificationQueue.grantSendMessages(bookingInitiator);
+    gi;
 
     const streamRouter = new NodejsFunction(this, 'StreamRouter', {
       entry: 'booking-service/src/streamRouter.ts',
@@ -207,7 +208,14 @@ export class TicketBookingStack extends cdk.Stack {
     });
     bookingTable.grantReadData(publicEndpoint);
 
-    const httpApi = new apigatewayv2.HttpApi(this, 'TicketApi');
+    const httpApi = new apigatewayv2.HttpApi(this, 'TicketApi', {
+      corsPreflight: {
+        allowOrigins: ['*'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.GET, apigatewayv2.CorsHttpMethod.OPTIONS],
+        allowHeaders: ['Content-Type'],
+        maxAge: cdk.Duration.days(10),
+      },
+    });
     httpApi.addRoutes({
       path: '/ticket/{bookingReferenceId}',
       methods: [apigatewayv2.HttpMethod.GET],
