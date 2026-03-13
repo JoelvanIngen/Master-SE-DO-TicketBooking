@@ -34,8 +34,9 @@ async function runWorkflow(simulateBookingFailure: string): Promise<BookingRespo
 
     ws.onmessage = (event: any) => {
       const data = JSON.parse(event.data.toString()) as BookingResponse;
-      // Filter out AWS connect noise
-      if (data.status) {
+      // Filter out AWS connect noise + ignore PENDING
+      // -> We're not interested in connection loss handing
+      if (data.status && data.status !== 'PENDING') {
         clearTimeout(timeout);
         ws.close();
         resolve(data);

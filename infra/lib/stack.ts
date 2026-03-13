@@ -88,9 +88,13 @@ export class TicketBookingStack extends cdk.Stack {
     const bookingInitiator = new NodejsFunction(this, 'BookingInitiator', {
       entry: 'booking-service/src/bookingInitiator.ts',
       ...nodeJsFunctionProps,
-      environment: { TABLE_NAME: bookingTable.tableName },
+      environment: {
+        TABLE_NAME: bookingTable.tableName,
+        NOTIFICATION_QUEUE_URL: notificationQueue.queueUrl,
+      },
     });
     bookingTable.grantWriteData(bookingInitiator);
+    notificationQueue.grantSendMessages(bookingInitiator);
 
     const streamRouter = new NodejsFunction(this, 'StreamRouter', {
       entry: 'booking-service/src/streamRouter.ts',

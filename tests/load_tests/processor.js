@@ -52,7 +52,7 @@ async function runWebSocketWorkflow(context, ee) {
         }
 
         // Wait specifically for the workflow completion/failure message
-        if (data.status) {
+        if (data.status && data.status !== 'PENDING') {
           clearTimeout(timeout);
           ws.close();
 
