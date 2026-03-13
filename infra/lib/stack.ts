@@ -57,6 +57,8 @@ export class TicketBookingStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_24_X,
       bundling: { externalModules: ['@aws-sdk/*'] },
       architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(10),
     };
 
     // Fake Services NodeJS Lambdas
