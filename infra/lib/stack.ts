@@ -57,6 +57,8 @@ export class TicketBookingStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_24_X,
       bundling: { externalModules: ['@aws-sdk/*'] },
       architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(10),
     };
 
     // Fake Services NodeJS Lambdas
@@ -207,7 +209,14 @@ export class TicketBookingStack extends cdk.Stack {
     });
     bookingTable.grantReadData(publicEndpoint);
 
-    const httpApi = new apigatewayv2.HttpApi(this, 'TicketApi');
+    const httpApi = new apigatewayv2.HttpApi(this, 'TicketApi', {
+      corsPreflight: {
+        allowOrigins: ['*'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.GET, apigatewayv2.CorsHttpMethod.OPTIONS],
+        allowHeaders: ['Content-Type'],
+        maxAge: cdk.Duration.days(10),
+      },
+    });
     httpApi.addRoutes({
       path: '/ticket/{bookingReferenceId}',
       methods: [apigatewayv2.HttpMethod.GET],
