@@ -19,13 +19,15 @@ AWS RDS is used as database.
 
 ## Automation (CI/CD)
 
-We use **GitHub Actions** to automate the deployment process:
+We use GitHub Actions to automate the deployment process:
 
 1.  Build: Compiles the code and allows for running tests.
 2.  Package: Stores artifacts of the compiled code.
 3.  Deploy: Uploads the images to AWS Lambda Functions, making them ready for deployment.
 
 ## Testing
+
+When the stack is deployed on AWS, several tests can be performed.
 
 ### Example Client
 
@@ -36,22 +38,42 @@ An example client can be deployed by navigating to `/examples` and running
 In a browser, navigate to `localhost:3000` and open the client.
 From there, follow the instructions on the webpage.
 
-### (OLD) curl
+### WebSocket cat
 
-When deployed, a ticket can be generated as follows:
-
-```
-curl -i -X PUT "https://[GATEWAY-URL]/ticket"
-```
-
-Two types of simulated failures are currently supported, and they can be tested using
+Using `wscat`, a WebSocket connection can be instantiated from the terminal with
 
 ```
-curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=seats"
+wscat -c [WSS_URL]
+```
+
+Keep in mind that the required URL is the WebSocket endpoint, not the HTTP endpoint.
+
+A ticket can be requestion by sending
+
+```
+{"action": "bookTicket"}
+```
+
+Alternatively, simulated booking errors can be triggered with
+
+```
+{"action": "bookTicket", "simulateBookingFailure": "seats"}
 ```
 
 ```
-curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=ticket"
+{"action": "bookTicket", "simulateBookingFailure": "ticket"}
+```
+
+A connection can be terminated with `ctrl-C`.
+
+### HTTP Fallback
+
+The API contains an HTTP endpoint that can be polled in case WebSocket connection is lost.
+
+The `bookingReferenceId` must be obtained via WebSocket, but if the connection is terminated before results are received, they can be polled from
+
+```
+curl -i -X GET [HTTP_URL]/ticket/{bookingReferenceId}
 ```
 
 ### Load tests
@@ -59,5 +81,8 @@ curl -i -X PUT "https://[GATEWAY-URL]/ticket?simulateBookingFailure=ticket"
 To simulate various levels of load, the `artillery` package can be used to execute load tests found in `tests/load_tests`:
 
 ```
-artillery run tests/load_tests/[TEST_NAME].yaml
+cd tests/load_tests/
+WSS_URL=[WSS_URL] artillery run -e [name] load_test.yaml
 ```
+
+The WSS_URL environment variable must be set, and must include the `/prod` path suffix.
