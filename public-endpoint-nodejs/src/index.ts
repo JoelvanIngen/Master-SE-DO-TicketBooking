@@ -42,7 +42,12 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       // We will probably want to reshape a bit to only return useful data but this will do for now
       return {
         statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
         body: JSON.stringify(Item),
       };
     }
