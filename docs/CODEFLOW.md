@@ -67,6 +67,7 @@ and happens at the same time as the rest of the workflow.
 The `DB Stream` events are dotted to show that these are implicit invocations via DDB's `stream` option.
 
 ![Code-flow Diagram](./codeflow-diagram.png)
+Mermaid Diagram for code flow
 
 ---
 
