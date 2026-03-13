@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Booking Client</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --error: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .full-width { grid-column: 1 / -1; }
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+        h1, h2, h3 { margin-top: 0; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        #logs {
+            background: #1e293b;
+            color: #38bdf8;
+            font-family: monospace;
+            padding: 1rem;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+        }
+        .log-time { color: #64748b; }
+        .log-send { color: #a7f3d0; }
+        .log-recv { color: #fde047; }
+        .log-error { color: #fca5a5; }
+
+        .ticket {
+            border: 2px dashed var(--primary);
+            padding: 1rem;
+            border-radius: 8px;
+            background: #eff6ff;
+            display: none;
+        }
+        .ticket.success { border-color: var(--success); background: #f0fdf4; }
+        .ticket.error { border-color: var(--error); background: #fef2f2; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+        .badge.PENDING { background: #eab308; }
+        .badge.COMPLETED { background: var(--success); }
+        .badge.FAILED { background: var(--error); }
+    </style>
+</head>
+<body>
+
+<div class="full-width">
+    <h1>🎟️ Ticket Booking</h1>
+    <p>Connects to AWS and streams booking progress</p>
+</div>
+
+<!-- Left Column: Controls -->
+<div class="card">
+    <h2>Configuration</h2>
+    <div class="form-group">
+        <label for="wsUrl">WebSocket API URL (WSS_URL)</label>
+        <input type="text" id="wsUrl" placeholder="wss://...execute-api.eu-north-1.amazonaws.com/prod">
+    </div>
+    <div class="form-group">
+        <label for="apiUrl">HTTP API URL (API_URL)</label>
+        <input type="text" id="apiUrl" placeholder="https://...execute-api.eu-north-1.amazonaws.com">
+    </div>
+
+    <h2 style="margin-top: 2rem;">Initiate Booking</h2>
+    <div class="form-group">
+        <label for="simulateFailure">Simulate Failure Scenario</label>
+        <select id="simulateFailure">
+            <option value="none">None</option>
+            <option value="seats">Simulate Seat failure</option>
+            <option value="ticket">Simulate Ticket failure</option>
+        </select>
+    </div>
+    <button id="bookBtn" onclick="startWorkflow()">Book Ticket via WebSocket</button>
+
+    <div style="margin-top: 1rem;">
+        <button id="pollBtn" onclick="pollHttpApi()" disabled style="background: #475569;">
+            Fetch Latest Status via HTTP API
+        </button>
+    </div>
+</div>
+
+<!-- Right Column: Results & Logs -->
+<div class="card">
+    <h2>Live Event Stream</h2>
+    <div id="logs"></div>
+
+    <h2 style="margin-top: 1.5rem;">Result</h2>
+    <div id="ticketResult" class="ticket">
+        <h3 id="ticketTitle">Booking Result</h3>
+        <p><strong>Status:</strong> <span id="ticketStatus" class="badge"></span></p>
+        <p><strong>Booking Ref:</strong> <span id="ticketRef">-</span></p>
+        <p><strong>Reservation ID:</strong> <span id="ticketResId">-</span></p>
+        <p><strong>Payment ID:</strong> <span id="ticketPayId">-</span></p>
+        <p><strong>Ticket ID:</strong> <span id="ticketId">-</span></p>
+    </div>
+</div>
+
+<script>
+    let currentWs = null;
+    let currentBookingRef = null;
+
+    function log(message, type = '') {
+        const logs = document.getElementById('logs');
+        const time = new Date().toISOString().split('T')[1].slice(0, -1);
+
+        let classType = '';
+        if (type === 'SEND') classType = 'log-send';
+        if (type === 'RECV') classType = 'log-recv';
+        if (type === 'ERR') classType = 'log-error';
+
+        logs.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${classType}">${message}</span></div>`;
+        logs.scrollTop = logs.scrollHeight;
+    }
+
+    function resetUI() {
+        const ticket = document.getElementById('ticketResult');
+        ticket.style.display = 'none';
+        ticket.className = 'ticket';
+        ['ticketRef', 'ticketResId', 'ticketPayId', 'ticketId'].forEach(id => {
+            document.getElementById(id).innerText = '-';
+        });
+        document.getElementById('ticketStatus').innerText = '';
+        document.getElementById('pollBtn').disabled = true;
+        currentBookingRef = null;
+    }
+
+    function updateTicketUI(data) {
+        const ticket = document.getElementById('ticketResult');
+        ticket.style.display = 'block';
+
+        currentBookingRef = data.bookingReferenceId;
+        document.getElementById('ticketRef').innerText = data.bookingReferenceId || '-';
+
+        if(currentBookingRef) document.getElementById('pollBtn').disabled = false;
+
+        const statusBadge = document.getElementById('ticketStatus');
+        statusBadge.innerText = data.status;
+        statusBadge.className = 'badge';
+
+        if (data.status === 'PENDING') {
+            statusBadge.classList.add('PENDING');
+        } else if (data.success) {
+            statusBadge.classList.add('COMPLETED');
+            ticket.className = 'ticket success';
+        } else {
+            statusBadge.classList.add('FAILED');
+            ticket.className = 'ticket error';
+        }
+
+        if (data.reservationId) document.getElementById('ticketResId').innerText = data.reservationId;
+        if (data.paymentConfirmationId) document.getElementById('ticketPayId').innerText = data.paymentConfirmationId;
+        if (data.ticketId) document.getElementById('ticketId').innerText = data.ticketId;
+    }
+
+    function startWorkflow() {
+        const wssUrl = document.getElementById('wsUrl').value.trim();
+        const simulateFailure = document.getElementById('simulateFailure').value;
+
+        if (!wssUrl) return alert('Please enter your WebSocket API URL first.');
+
+        resetUI();
+        document.getElementById('bookBtn').disabled = true;
+        document.getElementById('bookBtn').innerText = 'Processing...';
+
+        if (currentWs) currentWs.close();
+
+        log(`Connecting to ${wssUrl}...`);
+
+        try {
+            currentWs = new WebSocket(wssUrl);
+        } catch (err) {
+            log(`WebSocket Error: ${err.message}`, 'ERR');
+            resetButton();
+            return;
+        }
+
+        currentWs.onopen = () => {
+            log('Connected! Sending booking request...', 'SEND');
+            const payload = {
+                action: 'bookTicket',
+                simulateBookingFailure: simulateFailure
+            };
+            log(`>> ${JSON.stringify(payload)}`, 'SEND');
+            currentWs.send(JSON.stringify(payload));
+        };
+
+        currentWs.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                log(`<< Received payload: \n${JSON.stringify(data, null, 2)}`, 'RECV');
+
+                if (data.bookingReferenceId) {
+                    updateTicketUI(data);
+                }
+
+                // If we hit a terminal state, close WS
+                if (data.status && data.status !== 'PENDING') {
+                    log('Terminal state reached. Closing connection.');
+                    currentWs.close();
+                    resetButton();
+                }
+            } catch (e) {
+                log(`<< Non-JSON message: ${event.data}`, 'RECV');
+            }
+        };
+
+        currentWs.onerror = (error) => {
+            log(`WebSocket Error encountered.`, 'ERR');
+            resetButton();
+        };
+
+        currentWs.onclose = () => {
+            log('WebSocket Connection Closed.');
+            resetButton();
+        };
+
+        // Safety timeout matching the backend 60s
+        setTimeout(() => {
+            if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+                log('Demo client timeout (60s). Closing WS.', 'ERR');
+                currentWs.close();
+                resetButton();
+            }
+        }, 60000);
+    }
+
+    function resetButton() {
+        document.getElementById('bookBtn').disabled = false;
+        document.getElementById('bookBtn').innerText = 'Book Ticket via WebSocket';
+    }
+
+    async function pollHttpApi() {
+        let apiUrl = document.getElementById('apiUrl').value.trim();
+        if (!apiUrl) return alert('Please enter your HTTP API URL first.');
+        if (!currentBookingRef) return alert('No booking reference ID available yet.');
+
+        apiUrl = apiUrl.replace(/\/$/, ''); // Remove trailing slash
+
+        log(`HTTP GET ${apiUrl}/ticket/${currentBookingRef}`, 'SEND');
+
+        try {
+            const response = await fetch(`${apiUrl}/ticket/${currentBookingRef}`);
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            const data = await response.json();
+            log(`<< HTTP Response: \n${JSON.stringify(data, null, 2)}`, 'RECV');
+            updateTicketUI(data); // Refresh UI with HTTP data
+        } catch (error) {
+            log(error.message, 'ERR');
+        }
+    }
+</script>
+</body>
+</html>
