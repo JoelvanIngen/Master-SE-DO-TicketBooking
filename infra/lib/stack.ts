@@ -95,7 +95,6 @@ export class TicketBookingStack extends cdk.Stack {
     });
     bookingTable.grantWriteData(bookingInitiator);
     notificationQueue.grantSendMessages(bookingInitiator);
-    gi;
 
     const streamRouter = new NodejsFunction(this, 'StreamRouter', {
       entry: 'booking-service/src/streamRouter.ts',
