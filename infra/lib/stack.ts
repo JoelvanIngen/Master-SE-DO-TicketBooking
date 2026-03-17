@@ -11,23 +11,75 @@ import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-node
 import { SqsEventSource, DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { WebSocketApi, WebSocketStage } from 'aws-cdk-lib/aws-apigatewayv2';
+dead;
 import { StartingPosition } from 'aws-cdk-lib/aws-lambda';
+import * as path from 'path';
 import { createDashboard, MonitoringResources } from './monitoring/dashboard';
 import { createAlarms } from './monitoring/alarms';
+import { NagSuppressions } from 'cdk-nag';
 
 export class TicketBookingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // SQS Queues
-    const seatReservationRequestQueue = new sqs.Queue(this, 'SeatReservationReqQueue');
-    const seatReservationResponseQueue = new sqs.Queue(this, 'SeatReservationResQueue');
-    const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue');
-    const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue');
-    const ticketGenRequestQueue = new sqs.Queue(this, 'TicketGenReqQueue');
-    const ticketGenResponseQueue = new sqs.Queue(this, 'TicketGenResQueue');
-    const notificationQueue = new sqs.Queue(this, 'NotificationQueue');
-    const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue');
+    const systemDlq = new sqs.Queue(this, 'SystemDLQ', { enforceSSL: true });
+    const seatReservationRequestQueue = new sqs.Queue(this, 'SeatReservationReqQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const seatReservationResponseQueue = new sqs.Queue(this, 'SeatReservationResQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const ticketGenRequestQueue = new sqs.Queue(this, 'TicketGenReqQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const ticketGenResponseQueue = new sqs.Queue(this, 'TicketGenResQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const notificationQueue = new sqs.Queue(this, 'NotificationQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue', {
+      enforceSSL: true,
+      deadLetterQueue: {
+        queue: systemDlq,
+        maxReceiveCount: 3,
+      },
+    });
 
     // DynamoDB table
     const bookingTable = new dynamodb.Table(this, 'BookingTable', {
@@ -35,6 +87,7 @@ export class TicketBookingStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
     });
 
     // WebSocket
@@ -63,7 +116,7 @@ export class TicketBookingStack extends cdk.Stack {
 
     // Fake Services NodeJS Lambdas
     const reserveSeats = new NodejsFunction(this, 'ReserveSeats', {
-      entry: 'fake-services-nodejs/src/reserveSeats.ts',
+      entry: path.join(__dirname, '../../fake-services-nodejs/src/reserveSeats.ts'),
       ...nodeJsFunctionProps,
       environment: { SEAT_RESERVATION_RESPONSE_QUEUE_URL: seatReservationResponseQueue.queueUrl },
     });
@@ -71,7 +124,7 @@ export class TicketBookingStack extends cdk.Stack {
     seatReservationResponseQueue.grantSendMessages(reserveSeats);
 
     const ticketGen = new NodejsFunction(this, 'TicketGen', {
-      entry: 'fake-services-nodejs/src/ticketGen.ts',
+      entry: path.join(__dirname, '../../fake-services-nodejs/src/ticketGen.ts'),
       ...nodeJsFunctionProps,
       environment: { TICKET_GEN_RESPONSE_QUEUE_URL: ticketGenResponseQueue.queueUrl },
     });
@@ -79,7 +132,7 @@ export class TicketBookingStack extends cdk.Stack {
     ticketGenResponseQueue.grantSendMessages(ticketGen);
 
     const paymentService = new NodejsFunction(this, 'paymentService', {
-      entry: 'fake-services-nodejs/src/payment.ts',
+      entry: path.join(__dirname, '../../fake-services-nodejs/src/payment.ts'),
       ...nodeJsFunctionProps,
       environment: { PAYMENT_RESPONSE_QUEUE_URL: paymentResponseQueue.queueUrl },
     });
@@ -88,7 +141,7 @@ export class TicketBookingStack extends cdk.Stack {
 
     // Internal Services
     const bookingInitiator = new NodejsFunction(this, 'BookingInitiator', {
-      entry: 'booking-service/src/bookingInitiator.ts',
+      entry: path.join(__dirname, '../../booking-service/src/bookingInitiator.ts'),
       ...nodeJsFunctionProps,
       environment: {
         TABLE_NAME: bookingTable.tableName,
@@ -99,7 +152,7 @@ export class TicketBookingStack extends cdk.Stack {
     notificationQueue.grantSendMessages(bookingInitiator);
 
     const streamRouter = new NodejsFunction(this, 'StreamRouter', {
-      entry: 'booking-service/src/streamRouter.ts',
+      entry: path.join(__dirname, '../../booking-service/src/streamRouter.ts'),
       ...nodeJsFunctionProps,
       timeout: cdk.Duration.seconds(30), // Because of large batches
       memorySize: 512, // More compute for large batches
@@ -129,7 +182,7 @@ export class TicketBookingStack extends cdk.Stack {
       this,
       'seatReservationResponseHandler',
       {
-        entry: 'booking-service/src/seatReservationResponseHandler.ts',
+        entry: path.join(__dirname, '../../booking-service/src/seatReservationResponseHandler.ts'),
         ...nodeJsFunctionProps,
         environment: { TABLE_NAME: bookingTable.tableName },
       },
@@ -138,7 +191,7 @@ export class TicketBookingStack extends cdk.Stack {
     bookingTable.grantWriteData(seatReservationResponseHandler);
 
     const paymentResponseHandler = new NodejsFunction(this, 'PaymentResponseHandler', {
-      entry: 'booking-service/src/paymentResponseHandler.ts',
+      entry: path.join(__dirname, '../../booking-service/src/paymentResponseHandler.ts'),
       ...nodeJsFunctionProps,
       environment: { TABLE_NAME: bookingTable.tableName },
     });
@@ -146,7 +199,7 @@ export class TicketBookingStack extends cdk.Stack {
     bookingTable.grantWriteData(paymentResponseHandler);
 
     const ticketGenerationResultHandler = new NodejsFunction(this, 'TicketGenResHandler', {
-      entry: 'booking-service/src/ticketGenResponseHandler.ts',
+      entry: path.join(__dirname, '../../booking-service/src/ticketGenResponseHandler.ts'),
       ...nodeJsFunctionProps,
       environment: { TABLE_NAME: bookingTable.tableName },
     });
@@ -154,7 +207,7 @@ export class TicketBookingStack extends cdk.Stack {
     bookingTable.grantWriteData(ticketGenerationResultHandler);
 
     const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
-      entry: 'booking-service/src/timeoutHandler.ts',
+      entry: path.join(__dirname, '../../booking-service/src/timeoutHandler.ts'),
       ...nodeJsFunctionProps,
       environment: { TABLE_NAME: bookingTable.tableName },
     });
@@ -162,7 +215,7 @@ export class TicketBookingStack extends cdk.Stack {
     bookingTable.grantWriteData(timeoutHandler);
 
     const notificationHandler = new NodejsFunction(this, 'NotificationHandler', {
-      entry: 'booking-service/src/notificationHandler.ts',
+      entry: path.join(__dirname, '../../booking-service/src/notificationHandler.ts'),
       ...nodeJsFunctionProps,
       environment: { WS_API_ENDPOINT: wsApiEndpoint },
     });
@@ -200,7 +253,7 @@ export class TicketBookingStack extends cdk.Stack {
 
     // HTTP API (for querying with no ws/connection loss)
     const publicEndpoint = new NodejsFunction(this, 'PublicEndpoint', {
-      entry: 'public-endpoint-nodejs/src/index.ts',
+      entry: path.join(__dirname, '../../public-endpoint-nodejs/src/index.ts'),
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: cdk.Duration.seconds(15),
       environment: {
@@ -253,5 +306,70 @@ export class TicketBookingStack extends cdk.Stack {
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
     new cdk.CfnOutput(this, 'WebSocketUrl', { value: wsStage.url });
+
+    // Stack-wide suppressions for bureaucratic rules
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM4',
+        reason:
+          'We are using the default AWS role for basic CloudWatch logging to avoid unnecessary complexity in a prototype.',
+      },
+      {
+        id: 'AwsSolutions-APIG1',
+        reason:
+          'API access logging is disabled to save on CloudWatch storage costs for this university assignment.',
+      },
+    ]);
+
+    // Resource-specific suppressions for intentionally public APIs
+    NagSuppressions.addResourceSuppressions(
+      httpApi,
+      [
+        {
+          id: 'AwsSolutions-APIG4',
+          reason:
+            'This endpoint must remain public so users can retrieve their tickets. The unique booking ID acts as the access token.',
+        },
+      ],
+      true,
+    );
+
+    NagSuppressions.addResourceSuppressions(
+      webSocketApi,
+      [
+        {
+          id: 'AwsSolutions-APIG4',
+          reason:
+            'The WebSocket must be public so any user can connect and initiate the booking process.',
+        },
+      ],
+      true,
+    );
+
+    // Resource-specific suppression for necessary wildcard permissions
+    NagSuppressions.addResourceSuppressions(
+      notificationHandler,
+      [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason:
+            'The wildcard is required to push messages back to clients because WebSocket connection IDs are generated dynamically.',
+        },
+      ],
+      true,
+    );
+
+    NagSuppressions.addResourceSuppressions(
+      streamRouter,
+      [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason:
+            'AWS requires this database monitoring permission to be applied globally, making a wildcard mandatory.',
+          appliesTo: ['Resource::*'],
+        },
+      ],
+      true,
+    );
   }
 }
