@@ -11,7 +11,6 @@ import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-node
 import { SqsEventSource, DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { WebSocketApi, WebSocketStage } from 'aws-cdk-lib/aws-apigatewayv2';
-dead;
 import { StartingPosition } from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import { createDashboard, MonitoringResources } from './monitoring/dashboard';
