@@ -60,7 +60,7 @@ export function createAlarms(
           statistic: 'Sum',
           period: cdk.Duration.minutes(1),
         }),
-        toErr: resources.timeoutHandler.metricErrors({
+        toErr: resources.deadLetterQueueHandler.metricErrors({
           statistic: 'Sum',
           period: cdk.Duration.minutes(1),
         }),
