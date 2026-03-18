@@ -20,7 +20,7 @@ export const handler = async (event: any) => {
           ConditionExpression: '#st IN (:pending, :reserved, :payCompleted)',
           ExpressionAttributeNames: { '#st': 'status' },
           ExpressionAttributeValues: {
-            ':failed': 'FAILED_PAYMENT_TIMEOUT',
+            ':failed': 'FAILED_BOOKING',
             ':suc': false,
             ':pending': 'PENDING',
             ':reserved': 'SEATS_RESERVED',

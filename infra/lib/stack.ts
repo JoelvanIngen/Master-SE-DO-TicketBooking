@@ -22,60 +22,53 @@ export class TicketBookingStack extends cdk.Stack {
     super(scope, id, props);
 
     // SQS Queues
-    const systemDlq = new sqs.Queue(this, 'SystemDLQ', { enforceSSL: true });
+    const deadLetterQueue = new sqs.Queue(this, 'deadLetterQueue', { enforceSSL: true });
     const seatReservationRequestQueue = new sqs.Queue(this, 'SeatReservationReqQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const seatReservationResponseQueue = new sqs.Queue(this, 'SeatReservationResQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const paymentRequestQueue = new sqs.Queue(this, 'PaymentRequestQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const paymentResponseQueue = new sqs.Queue(this, 'PaymentResponseQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const ticketGenRequestQueue = new sqs.Queue(this, 'TicketGenReqQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const ticketGenResponseQueue = new sqs.Queue(this, 'TicketGenResQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
     const notificationQueue = new sqs.Queue(this, 'NotificationQueue', {
       enforceSSL: true,
       deadLetterQueue: {
-        queue: systemDlq,
-        maxReceiveCount: 3,
-      },
-    });
-    const timeoutQueue = new sqs.Queue(this, 'TimeoutQueue', {
-      enforceSSL: true,
-      deadLetterQueue: {
-        queue: systemDlq,
+        queue: deadLetterQueue,
         maxReceiveCount: 3,
       },
     });
@@ -159,7 +152,6 @@ export class TicketBookingStack extends cdk.Stack {
         SEAT_RESERVATION_REQUEST_QUEUE_URL: seatReservationRequestQueue.queueUrl,
         PAYMENT_REQUEST_QUEUE_URL: paymentRequestQueue.queueUrl,
         TICKET_GEN_REQUEST_QUEUE_URL: ticketGenRequestQueue.queueUrl,
-        TIMEOUT_QUEUE_URL: timeoutQueue.queueUrl,
         NOTIFICATION_QUEUE_URL: notificationQueue.queueUrl,
       },
     });
@@ -174,7 +166,6 @@ export class TicketBookingStack extends cdk.Stack {
     seatReservationRequestQueue.grantSendMessages(streamRouter);
     paymentRequestQueue.grantSendMessages(streamRouter);
     ticketGenRequestQueue.grantSendMessages(streamRouter);
-    timeoutQueue.grantSendMessages(streamRouter);
     notificationQueue.grantSendMessages(streamRouter);
 
     const seatReservationResponseHandler = new NodejsFunction(
@@ -205,13 +196,13 @@ export class TicketBookingStack extends cdk.Stack {
     ticketGenerationResultHandler.addEventSource(new SqsEventSource(ticketGenResponseQueue));
     bookingTable.grantWriteData(ticketGenerationResultHandler);
 
-    const timeoutHandler = new NodejsFunction(this, 'TimeoutHandler', {
-      entry: path.join(__dirname, '../../booking-service/src/timeoutHandler.ts'),
+    const deadLetterQueueHandler = new NodejsFunction(this, 'DeadLetterHandler', {
+      entry: path.join(__dirname, '../../booking-service/src/dlqHandler.ts'),
       ...nodeJsFunctionProps,
       environment: { TABLE_NAME: bookingTable.tableName },
     });
-    timeoutHandler.addEventSource(new SqsEventSource(timeoutQueue));
-    bookingTable.grantWriteData(timeoutHandler);
+    deadLetterQueueHandler.addEventSource(new SqsEventSource(deadLetterQueue));
+    bookingTable.grantWriteData(deadLetterQueueHandler);
 
     const notificationHandler = new NodejsFunction(this, 'NotificationHandler', {
       entry: path.join(__dirname, '../../booking-service/src/notificationHandler.ts'),
@@ -283,7 +274,7 @@ export class TicketBookingStack extends cdk.Stack {
       seatReservationResponseHandler,
       paymentResponseHandler,
       ticketGenerationResultHandler,
-      timeoutHandler,
+      deadLetterQueueHandler,
       notificationHandler,
       reserveSeats,
       ticketGen,
@@ -295,7 +286,7 @@ export class TicketBookingStack extends cdk.Stack {
       ticketGenRequestQueue,
       ticketGenResponseQueue,
       notificationQueue,
-      timeoutQueue,
+      deadLetterQueue,
       bookingTable,
     };
 
