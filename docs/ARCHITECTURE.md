@@ -2,39 +2,35 @@
 
 ## Current Architecture
 
-This file explains the technical architecture of the project.
+This document outlines the technical architecture of the ticket booking migration project.
 
 ### Compute
 
-AWS Lambda is used to run code, without need for manual server management.
-This approach is inherently scalable, and very AWS-native.
-Functions are written in Java and TypeScript:
+We use AWS Lambda (Node.js/TypeScript) for all backend compute. This provides a scale-to-zero model, meaning we pay nothing for idle time and scale automatically under load.
 
-- Java Functions
-  - `GenerateTicketHandler`: Triggers ticket generation
-  - `RetrievePaymentHandler`: Pushes messages to SQS to trigger payment requests
-  - `PaymentResponseHandler`: Consumer that processes payment responses from SQS and continues the workflow
-- TypeScript Functions
-  - `reserveSeats`: Simulates seat reservation logic
-  - `payment`: Simulates payment provider logic
-  - `ticketGen`: Simulates ticket identifier generation logic
+- **API Entry Points:**
+  - `BookingInitiator`: Receives WebSocket requests, writes the initial state, and starts the workflow.
+  - `PublicEndpoint`: Serves synchronous HTTP GET requests for clients to retrieve ticket status.
+- **State Routing:**
+  - `streamRouter`: Listens to DynamoDB Streams and routes state changes to the correct SQS queues.
+- **Worker Services (Simulated):**
+  - `reserveSeats`, `paymentService`, `ticketGen`: Execute the core business logic.
+- **Internal Handlers:**
+  - `seatReservationResponseHandler`, `paymentResponseHandler`, `ticketGenResponseHandler`: Consume worker results from SQS and update the database.
+  - `notificationHandler`: Pushes async status updates back to the client via WebSocket.
+  - `dlqHandler`: Processes exhausted messages from the Dead Letter Queue to safely mark transactions as failed.
 
-### Orchestration
+### State Management & Choreography
 
-AWS Step Functions are used to coordinate the workflow.
-It manages the sequence of seat reservation, payment processing, and ticket generation.
-The workflow is described in `CODEFLOW.md`
+We replaced the centralized Camunda workflow engine with an event-driven choreography pattern. Amazon DynamoDB (`BookingTable`) is the single source of truth. When a database row is updated, DynamoDB Streams triggers the `streamRouter` Lambda, which evaluates the new status and pushes commands to specific SQS queues to trigger the next step.
 
-### Messaging
+### Messaging & Resilience
 
-AWS SQS manages message parsing between functions.
+Amazon SQS decouples the worker services. We handle service unavailability predictively using SQS Visibility Timeouts and Maximum Receive Counts. If a worker fails repeatedly, SQS routes the message to a centralized Dead Letter Queue (DLQ). The `dlqHandler` then updates the database to a failed state and notifies the user.
 
 ### Networking & Security
 
-Amazon VPC is used to allow secure communication between services for functions deployed inside, and to allow access to private resources.
-Security groups are applied to control traffic flow between the Lambda Functions, SQS, and the database.
-Amazon RDS is used as database to keep persistent booking data.
-AWS Secrets Manager is used to inject environment variables that should not be publicised in public locations.
+Amazon API Gateway is the public entry point. Internal security relies natively on AWS IAM. We use the AWS Cloud Development Kit (CDK) to generate strict, least-privilege IAM policies, ensuring components only access the specific resources they need.
 
 ## Architectural decisions
 

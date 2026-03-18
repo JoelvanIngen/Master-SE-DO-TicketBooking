@@ -33,9 +33,8 @@ This section shows the code flow of the booking process in case of a successful 
 
 5. **Stream Router (`streamRouter.ts`):**
    - The DynamoDB `INSERT` event triggers the `StreamRouter` Lambda.
-   - It evaluates that `status === 'PENDING'` and dispatches two SQS messages:
-     1. A reservation request to `SEAT_RESERVATION_REQUEST_QUEUE`.
-     2. A timeout event to `TIMEOUT_QUEUE` with a `DelaySeconds: 60` (to clean up zombie workflows in case of failure).
+   - It evaluates that `status === 'PENDING'` and dispatches a SQS message:
+     - A reservation request to `SEAT_RESERVATION_REQUEST_QUEUE`.
 
 ### Phase 3: Fake Services & Callbacks
 
@@ -87,10 +86,11 @@ If the client passes `simulateBookingFailure: "seats"` or `"ticket"`, the respec
 - `ticketGenResponseHandler` updates DB to `FAILED_TICKET_ERROR`.
 - In both cases, the `StreamRouter` sees a terminal state and immediately alerts the client, skipping further steps.
 
-### Zombie Workflows / Timeouts
+### Service Unavailability / Dead Letter Queue (DLQ)
 
-In Phase 3 (Initiator), a message was sent to the `TIMEOUT_QUEUE` with a 60-second delay.
+To handle errors and service failures, the system relies on SQS automated retries and a centralized Dead Letter Queue (DLQ).
 
-- After 60 seconds, the `timeoutHandler` reads this message.
-- It attempts a conditional update on DynamoDB. If the status is still in a transitional state (`PENDING`, `SEATS_RESERVED`, or `PAYMENT_COMPLETED`), it changes the status to `FAILED_PAYMENT_TIMEOUT`.
-- If the workflow already finished, the Conditional Expression fails (`ConditionalCheckFailedException`), and the handler ignores it.
+- When a worker service (e.g., `payment.ts` or `reserveSeats.ts`) fails to process a message, the SQS visibility timeout expires, and the message is automatically retried.
+- If a message fails processing three consecutive times (`maxReceiveCount: 3`), SQS automatically moves it from the worker queue to the centralized `deadLetterQueue`.
+- The `dlqHandler` Lambda consumes the exhausted message from the DLQ.
+- It updates the DynamoDB `BookingTable` to a terminal failure state (`FAILED_BOOKING`), which subsequently triggers the `streamRouter` to send a final failure notification to the client.
