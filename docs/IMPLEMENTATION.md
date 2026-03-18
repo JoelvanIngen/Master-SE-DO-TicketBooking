@@ -26,7 +26,7 @@ Whilst earlier versions used Step Functions for central orchestration, this appr
 
 There are downsides to the pure Lambda + SQS approach, too:
 
-- **Lack of workflow tracing**: more effort is required to debug a non-functional workflow, and it requires reading the logs of functions in order until a timeout or non-firing function is found.
+- **Lack of workflow tracing**: more effort is required to debug a non-functional workflow, and it requires reading the logs of functions in order until a failure or non-firing function is found.
   - This was mitigated by the fact that we only made the switch once we had a functional workflow, and we no longer needed debug tracing.
 - **Manual state management** The workflow state needs to be written into the DDB, and the orchestrator lambda needs to handle it. This is more convoluted than a statechart.
 
