@@ -8,6 +8,9 @@
     "public-endpoint-nodejs",
     "infra"
   ],
+  "overrides": {
+    "fast-xml-parser": "^5.5.6"
+  },
   "scripts": {
     "asl-validate": "asl-validator --yaml-path ticket-booking.asl.json",
     "build": "npm run build:java && npm run build:infra",
