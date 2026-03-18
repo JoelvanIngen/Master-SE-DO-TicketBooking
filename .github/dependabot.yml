@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: 'maven'
     directory: '/booking-service-java'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
     groups:
       aws-sdk:
         patterns: ['software.amazon.awssdk:*']
@@ -11,7 +11,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
     groups:
       aws-sdk:
         patterns: ['@aws-sdk/*']
@@ -19,4 +19,4 @@ updates:
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: 'weekly'
