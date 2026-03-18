@@ -42,6 +42,16 @@ config:
           arrivalRate: 320
           name: 'Sustaining 320 requests per second for two minutes'
 
+    quadruple_load:
+      phases:
+        - duration: 60
+          arrivalRate: 1
+          rampTo: 640
+          name: 'Ramping up to target load'
+        - duration: 120
+          arrivalRate: 640
+          name: 'Sustaining 640 requests per second for two minutes'
+
 scenarios:
   - name: 'Book ticket and await completion'
     flow:

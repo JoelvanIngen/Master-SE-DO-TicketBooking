@@ -14,6 +14,7 @@ on:
           - medium_load
           - full_load
           - double_load
+          - quadruple_load
 
 env:
   NODE_VERSION: 24
