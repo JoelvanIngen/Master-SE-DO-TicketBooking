@@ -248,7 +248,7 @@ export class TicketBookingStack extends cdk.Stack {
     };
 
     createDashboard(this, monitoringResources);
-    createAlarms(this, monitoringResources /*, 'dertje.roggeveen@student.uva.nl' */);
+    createAlarms(this, monitoringResources /*, 'example@maildomain.com' */);
 
     // Outputs
     new cdk.CfnOutput(this, 'HttpApiUrl', { value: httpApi.apiEndpoint });
