@@ -14,7 +14,7 @@ export interface MonitoringResources {
   seatReservationResponseHandler: lambda.IFunction;
   paymentResponseHandler: lambda.IFunction;
   ticketGenerationResultHandler: lambda.IFunction;
-  timeoutHandler: lambda.IFunction;
+  deadLetterQueueHandler: lambda.IFunction;
   notificationHandler: lambda.IFunction;
   reserveSeats: lambda.IFunction;
   ticketGen: lambda.IFunction;
@@ -26,7 +26,7 @@ export interface MonitoringResources {
   ticketGenRequestQueue: sqs.IQueue;
   ticketGenResponseQueue: sqs.IQueue;
   notificationQueue: sqs.IQueue;
-  timeoutQueue: sqs.IQueue;
+  deadLetterQueue: sqs.IQueue;
   bookingTable: dynamodb.ITable;
 }
 
@@ -84,10 +84,10 @@ export function createDashboard(
       label: 'ticketGenerationResultHandler',
     });
 
-  const timeoutInvocations = resources.timeoutHandler.metricInvocations({
+  const deadLetterQueueInvocations = resources.deadLetterQueueHandler.metricInvocations({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
-    label: 'TimeoutHandler',
+    label: 'DeadLetterQueueHandler',
   });
 
   const notificationHandlerInvocations = resources.notificationHandler.metricInvocations({
@@ -152,10 +152,10 @@ export function createDashboard(
     label: 'ticketGenerationResultHandler Errors',
   });
 
-  const timeoutErrors = resources.timeoutHandler.metricErrors({
+  const deadLetterQueueErrors = resources.deadLetterQueueHandler.metricErrors({
     statistic: 'Sum',
     period: cdk.Duration.minutes(1),
-    label: 'TimeoutHandler Errors',
+    label: 'DeadLetterQueueHandler Errors',
   });
 
   const notificationHandlerErrors = resources.notificationHandler.metricErrors({
@@ -221,10 +221,10 @@ export function createDashboard(
       label: 'ticketGenerationResultHandler Duration',
     });
 
-  const timeoutDuration = resources.timeoutHandler.metricDuration({
+  const deadLetterQueueDuration = resources.deadLetterQueueHandler.metricDuration({
     statistic: 'Average',
     period: cdk.Duration.minutes(1),
-    label: 'TimeoutHandler Duration',
+    label: 'DeadLetterQueue Duration',
   });
 
   const notificationHandlerDuration = resources.notificationHandler.metricDuration({
@@ -251,7 +251,7 @@ export function createDashboard(
       srrhInv: seatReservationResponseHandlerInvocations,
       prInv: paymentResponseInvocations,
       tgrhInv: ticketGenerationResultHandlerInvocations,
-      toInv: timeoutInvocations,
+      dlqInv: deadLetterQueueInvocations,
       nhInv: notificationHandlerInvocations,
       peInv: publicEndpointInvocations,
       rsInv: reserveSeatsInvocations,
@@ -262,7 +262,7 @@ export function createDashboard(
       srrhErr: seatReservationResponseHandlerErrors,
       prErr: paymentResponseErrors,
       tgrhErr: ticketGenerationResultHandlerErrors,
-      toErr: timeoutErrors,
+      dlqErr: deadLetterQueueErrors,
       nhErr: notificationHandlerErrors,
       peErr: publicEndpointErrors,
       rsErr: reserveSeatsErrors,
@@ -307,10 +307,10 @@ export function createDashboard(
       label: 'notificationQueue',
     });
 
-  const timeoutQueueDepth = resources.timeoutQueue.metricApproximateNumberOfMessagesVisible({
+  const deadLetterQueueDepth = resources.deadLetterQueue.metricApproximateNumberOfMessagesVisible({
     statistic: 'Average',
     period: cdk.Duration.minutes(1),
-    label: 'TimeoutQueue',
+    label: 'DeadLetterQueue',
   });
 
   // --- Lambda concurrent executions (resource usage) ---
@@ -353,11 +353,14 @@ export function createDashboard(
     },
   );
 
-  const timeoutConcurrent = resources.timeoutHandler.metric('ConcurrentExecutions', {
-    statistic: 'Maximum',
-    period: cdk.Duration.minutes(1),
-    label: 'TimeoutHandler Concurrent',
-  });
+  const deadLetterQueueHandlerConcurrent = resources.deadLetterQueueHandler.metric(
+    'ConcurrentExecutions',
+    {
+      statistic: 'Maximum',
+      period: cdk.Duration.minutes(1),
+      label: 'DeadLetterQueueHandler Concurrent',
+    },
+  );
 
   const notificationHandlerConcurrent = resources.notificationHandler.metric(
     'ConcurrentExecutions',
@@ -396,7 +399,7 @@ export function createDashboard(
         seatReservationResponseHandlerDuration,
         paymentResponseDuration,
         ticketGenerationResultHandlerDuration,
-        timeoutDuration,
+        deadLetterQueueDuration,
         notificationHandlerDuration,
         publicEndpointDuration,
       ],
@@ -416,7 +419,7 @@ export function createDashboard(
         paymentResponseInvocations,
         ticketGenerationResultHandlerInvocations,
         ticketGenInvocations,
-        timeoutInvocations,
+        deadLetterQueueInvocations,
         notificationHandlerInvocations,
         publicEndpointInvocations,
       ],
@@ -430,7 +433,7 @@ export function createDashboard(
         seatReservationResponseHandlerErrors,
         paymentResponseErrors,
         ticketGenerationResultHandlerErrors,
-        timeoutErrors,
+        deadLetterQueueErrors,
         notificationHandlerErrors,
         publicEndpointErrors,
         reserveSeatsErrors,
@@ -455,7 +458,7 @@ export function createDashboard(
         seatReservationResponseHandlerConcurrent,
         paymentResponseConcurrent,
         ticketGenerationResultHandlerConcurrent,
-        timeoutConcurrent,
+        deadLetterQueueHandlerConcurrent,
         notificationHandlerConcurrent,
       ],
       width: 12,
@@ -471,7 +474,7 @@ export function createDashboard(
         ticketGenRequestQueueDepth,
         ticketGenResponseQueueDepth,
         notificationQueueDepth,
-        timeoutQueueDepth,
+        deadLetterQueueDepth,
       ],
       width: 12,
     }),

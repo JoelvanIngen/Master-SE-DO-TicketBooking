@@ -37,13 +37,6 @@ export const handler = async (event: any) => {
                 MessageBody: JSON.stringify({ bookingReferenceId, simulateBookingFailure }),
               }),
             ),
-            sqs.send(
-              new SendMessageCommand({
-                QueueUrl: process.env.TIMEOUT_QUEUE_URL,
-                MessageBody: JSON.stringify({ bookingReferenceId }),
-                DelaySeconds: 60,
-              }),
-            ),
           ]);
           break;
 
@@ -68,7 +61,7 @@ export const handler = async (event: any) => {
         case 'COMPLETED':
         case 'FAILED_SEATS_UNAVAILABLE':
         case 'FAILED_TICKET_ERROR':
-        case 'FAILED_PAYMENT_TIMEOUT':
+        case 'FAILED_BOOKING':
           // Terminal states
           const payload = {
             bookingReferenceId,

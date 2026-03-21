@@ -1,4 +1,5 @@
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { v4 as uuidv4 } from 'uuid';
 
 const sqs = new SQSClient({});
 
@@ -16,7 +17,7 @@ export const handler = async (event: any) => {
         MessageBody: JSON.stringify({
           bookingReferenceId,
           success,
-          reservationId: success ? '1234' : undefined,
+          reservationId: success ? uuidv4() : undefined,
         }),
       }),
     );
