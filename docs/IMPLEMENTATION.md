@@ -4,9 +4,7 @@ This document justifies our implementation decisions.
 
 ## Orchestration
 
-Orchestration is performed by the `streamRouter` function, which triggers on every DDB action.
-This function then messages the correct functions via SQS based on the status of the DDB entry.
-The `streamRouter` therefore serves as central orchestrator.
+Orchestration is performed by the `streamRouter` function, which triggers on DynamoDB Stream events for booking state changes. This function then messages the correct functions via SQS based on the status of the DDB entry. The `streamRouter` therefore serves as central orchestrator.
 
 ### Lack of Step Functions
 
@@ -34,9 +32,7 @@ There are downsides to the pure Lambda + SQS approach, too:
 
 #### Scalable
 
-The entire workflow is asynchronous.
-No two lambdas wait for each other, and all messaging is conducted via SQS.
-This means the workflow is exceptionally resilient to load increase and load spikes.
+The entire workflow is asynchronous. No two lambdas wait for each other, and internal workflow messaging is conducted via SQS. This means the workflow is exceptionally resilient to load increase and load spikes.
 
 #### Extensible
 
