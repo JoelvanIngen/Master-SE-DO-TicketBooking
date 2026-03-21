@@ -72,17 +72,6 @@ The upside of Amazon MQ is the compatibility with RabbitMQ, requiring no code ch
 However, considering the small codebase of this project, rewriting is not a time-consuming task.
 
 ### Camunda
+We replaced the centralized Camunda workflow engine with an event-driven choreography pattern. Amazon DynamoDB (`BookingTable`) is the single source of truth.
 
-Camunda is inferior to Step Functions for this project for multiple reasons.
-
-- Camunda is designed for complex logic, user tasks, extensive business rules, and visual modelling for stakeholders.
-  Step functions is simpler, and covers all needs for this project.
-- Camunda requires managed deployment, which adds to deployment complexity.
-  Step Functions is a fully AWS-managed service, with no infrastructure to manage.
-- Step Functions integrates better with the AWS ecosystem, and directly invokes SQS, ECS, and Lambda.
-  Camunda is platform-agnostic, requiring a separate integration layer.
-- Camunda, when hosted on the cloud, requires subscription-based payment.
-  Step Functions incurs cost per usage, and is likely cheaper for this project.
-- Camunda requires a permanent connection to at least one instance of each workflow node,
-  forcing the architecture towards a less-suitable deployment solution (such as EC2, Fargate, or EKS).
-  Step Functions allows (and is even built for) short-running functions such as AWS Lambda.
+When a database row is updated, DynamoDB Streams triggers the `streamRouter` Lambda, which evaluates the new status and pushes commands to specific SQS queues to trigger the next step.
