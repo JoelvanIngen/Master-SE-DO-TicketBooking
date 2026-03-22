@@ -5,10 +5,9 @@ The goal of this project is to demonstrate a production-ready setup using AWS se
 It ensures the application is scalable, reliable, and cost-aware.
 
 ## Demo videos
-https://github.com/user-attachments/assets/2ad34978-7d6f-4c3a-a690-a266af04f3ef
-
-
 https://github.com/user-attachments/assets/59902dfb-59db-4bb2-b166-f8547cf9c1e3
+
+https://github.com/user-attachments/assets/2ad34978-7d6f-4c3a-a690-a266af04f3ef
 
 ## Overview
 This repository contains four main workspaces:
