@@ -190,3 +190,7 @@ GitHub Actions runs the pipeline on pushes to `main`, pull requests targeting `m
 
 ## Notes
 This project is designed as a prototype/demo of a cloud-native booking flow. The downstream services are intentionally mocked in `fake-services-nodejs`, while the infrastructure and orchestration patterns are set up to demonstrate decoupling, observability, and elasticity.
+
+
+## Demo videos
+https://github.com/user-attachments/assets/2ad34978-7d6f-4c3a-a690-a266af04f3ef
