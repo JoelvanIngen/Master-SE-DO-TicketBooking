@@ -13,7 +13,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@aws-sdk/lib-dynamodb": "^3.1008.0",
+    "@aws-sdk/lib-dynamodb": "^3.1017.0",
     "@types/aws-lambda": "^8.10.0"
   }
 }
