@@ -1,0 +1,3 @@
+[submodule "aws-lambda-power-tuning"]
+	path = aws-lambda-power-tuning
+	url = https://github.com/alexcasalboni/aws-lambda-power-tuning.git

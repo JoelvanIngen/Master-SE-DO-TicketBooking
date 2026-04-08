@@ -1,0 +1,26 @@
+{
+  "reserveSeat": [
+    {
+      "power": 512,
+      "cost": 7.48e-8,
+      "duration": 10.011833333333334,
+      "stateMachine": {
+        "executionCost": 5.3e-4,
+        "lambdaCost": 7.644050000000003e-5,
+        "visualization": "https://lambda-power-tuning.show/#gAAAAQACAAQABg==;EFj0QXzNc0F4MCBBivoVQfNEH0E=;b6VpM2+laTO8oaAzZQcSNJrycDQ="
+      }
+    },
+    {
+      "power": 256,
+      "cost": 4.0799999999999995e-8,
+      "duration": 10.76683333333333,
+      "stateMachine": {
+        "executionCost": 5.3e-4,
+        "lambdaCost": 7.51978e-5,
+        "visualization": "https://lambda-power-tuning.show/#gAAAAQACAAQABg==;Abn1QfNELEG1gQ9BFK4QQXCECkE=;b6VpMxM8LzNlB5IzZQcSNBgLWzQ="
+      }
+    }
+  ],
+
+  "streamRouter": []
+}
